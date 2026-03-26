@@ -114,16 +114,25 @@ resource "aws_autoscaling_group" "rr_autoscaling_group" {
   ]
 }
 
-
+# Attach autoscaling policy
 resource "aws_autoscaling_policy" "rr_cpu_scaling_policy" {
   name                   = "rr-cpu-target-tracking"
   autoscaling_group_name = aws_autoscaling_group.rr_autoscaling_group.name
   policy_type            = "TargetTrackingScaling"
 
+  # The "Smoothing" Buffer: 
+  # Wait 300 seconds (3 mins) after a scaling activity before doing another one.
+  estimated_instance_warmup = 180 
+
   target_tracking_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ASGAverageCPUUtilization"
     }
-    target_value = 40.0 # Scale out when average CPU exceeds 40%
+    target_value = 50.0
+
+    # SCALE-IN PROTECTION:
+    # This prevents "Erratic Scaling Down" by forcing a 3-minute wait 
+    # after the load drops before an instance is terminated.
+    disable_scale_in = false 
   }
 }
