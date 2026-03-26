@@ -1,6 +1,6 @@
 data "aws_region" "current" {}
 
-# Create the Secret Container
+# 1. The Secret Container
 resource "aws_secretsmanager_secret" "db_secret" {
   name                    = "rr-db-secret-14"
   recovery_window_in_days = 0 
@@ -10,7 +10,8 @@ resource "aws_secretsmanager_secret" "db_secret" {
   })
 }
 
-# STAGE 1: Skeleton Version (No Host)
+# 2. STAGE 1: Skeleton Version (Initial Credentials)
+# This allows the RDS to boot without needing its own Host address yet.
 resource "aws_secretsmanager_secret_version" "db_secret_version" {
   secret_id = aws_secretsmanager_secret.db_secret.id
   secret_string = jsonencode({
@@ -22,13 +23,17 @@ resource "aws_secretsmanager_secret_version" "db_secret_version" {
   })
 }
 
-# Data source for RDS to read STAGE 1
-data "aws_secretsmanager_secret_version" "rr_db_credentials" {
-  secret_id  = aws_secretsmanager_secret.db_secret.id
+# 3. THE DYNAMIC POINTER
+# This always tracks the "AWSCURRENT" label. 
+# It ensures that even after a rotation, RDS sees the LATEST secret.
+data "aws_secretsmanager_secret_version" "latest_credentials" {
+  secret_id = aws_secretsmanager_secret.db_secret.id
+  # Explicitly depends on the skeleton existing so it can read it on the first run
   depends_on = [aws_secretsmanager_secret_version.db_secret_version]
 }
 
-# STAGE 2: Full Version (With Host)
+# 4. STAGE 2: Full Version (Adds the Real Host)
+# Explicitly depends on the RDS being 'Available' to ensure the address is valid.
 resource "aws_secretsmanager_secret_version" "db_host_update" {
   secret_id = aws_secretsmanager_secret.db_secret.id
   secret_string = jsonencode({
@@ -36,11 +41,14 @@ resource "aws_secretsmanager_secret_version" "db_host_update" {
     password = var.db_password
     dbname   = "ritual_roast"
     port     = 3306
-    host     = aws_db_instance.ritual_roast_db.address
+    host     = aws_db_instance.ritual_roast_db.address 
   })
+
+  # CRITICAL: Ensures the DB is 100% ready before we fetch its address
+  depends_on = [aws_db_instance.ritual_roast_db]
 }
 
-# Rotation
+# 5. Rotation Logic
 resource "aws_secretsmanager_secret_rotation" "db_secret_rotation" {
   secret_id           = aws_secretsmanager_secret.db_secret.id
   rotation_lambda_arn = aws_lambda_function.secret_rotation_function.arn
@@ -49,5 +57,6 @@ resource "aws_secretsmanager_secret_rotation" "db_secret_rotation" {
     automatically_after_days = 7
   }
 
+  # Ensure the Full Secret exists before the Lambda tries to rotate anything
   depends_on = [aws_secretsmanager_secret_version.db_host_update] 
 }
