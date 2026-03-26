@@ -1,0 +1,112 @@
+# Listing public subnets and their respective info
+public_subnet_list = [
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  }
+]
+
+# Listing the web subnets and their respective info
+web_subnet_list = [
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  }
+]
+
+# Listing the App subnets and their respective info
+app_subnet_list = [
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  }
+]
+
+# Listing the Database subnets and their respective info
+database_subnet_list = [
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  },
+  {
+    subnet_name = "Replace_me"
+    cidr        = "Replace_me"
+    az          = "Replace_me"
+  }
+]
+
+# setting value for environment
+environment = "Replace_me"
+
+#------------------------------------------------------------------------
+# ---------------------- EC2 Validation variables -----------------------
+#------------------------------------------------------------------------
+
+instance_type = "Replace_me"
+
+ami = "Replace_me"
+
+volume_size = Replace_me
+
+volume_type = "Replace_me"
+
+delete_on_termination = Replace_me
+
+iam_instance_profile = "Replace_me"
+
+associate_public_ip_address = Replace_me
+
+
+#------------------------------------------------------------------------
+# -------------------- MyySQL Validation variables ----------------------
+#------------------------------------------------------------------------
+
+mysql_engine = "Replace_me"
+
+db_instance_class = "Replace_me"
+
+db_allocated_storage = Replace_me
+
+#------------------------------------------------------------------------
+
+# S3 bucket
+s3_bucket = "Replace_me"

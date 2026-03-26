@@ -1,0 +1,27 @@
+# Local .terraform directory (contains binaries and plugins)
+**/.terraform/*
+
+# Local state files (just in case you ever stop using S3)
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Exclude sensitive variables (e.g., passwords you put in a .tfvars file)
+*.tfvars
+*.tfvars.json
+
+# Ignore CLI config files
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+
+# Python dependencies
+**/index/
+**/pymysql/
+**/__pycache__/
+*.zip
+.venv/
+index.zip
