@@ -202,5 +202,9 @@ resource "aws_iam_role_policy_attachment" "ssm_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" # Managed policy ARN
 }
 
-
+# This creates the Instance Profile that the Auto Scaling Group needs
+resource "aws_iam_instance_profile" "rr_instance_profile" {
+  name = "rr-instance-profile"
+  role = aws_iam_role.rr_ec2_s3_secret_role.name # Links to your existing role
+}
 

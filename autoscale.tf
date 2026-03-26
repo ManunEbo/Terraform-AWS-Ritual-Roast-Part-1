@@ -1,3 +1,9 @@
+# This generates a unique suffix for the ASG name
+# It only changes if the 'keepers' change (or if you manually taint it)
+resource "random_id" "asg_suffix" {
+  byte_length = 2 # This results in a 4-character hex string (e.g., "abcd")
+}
+
 # The Launch Template stays the same as your previous working version
 resource "aws_launch_template" "rr_launch_template" {
   name_prefix   = "rr_launch_template-"
@@ -14,37 +20,37 @@ resource "aws_launch_template" "rr_launch_template" {
   }
 
   user_data = base64encode(<<-EOF
-    #!/bin/bash
-    exec > /var/log/user-data.log 2>&1
-    echo "Starting setup..."
-    dnf update -y
-    dnf install -y python3-pip unzip wget
-    
-    # MySQL Client installation
-    dnf install -y https://dev.mysql.com/get/mysql84-community-release-el9-1.noarch.rpm
-    rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
-    dnf install -y mysql-community-client
+#!/bin/bash
+exec > /var/log/user-data.log 2>&1
+echo "Starting setup..."
+dnf update -y
+dnf install -y python3-pip unzip wget
 
-    # RDS SSL Cert
-    cd /home/ec2-user
-    curl -O https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-    chown ec2-user:ec2-user global-bundle.pem
+# MySQL Client installation
+dnf install -y https://dev.mysql.com/get/mysql84-community-release-el9-1.noarch.rpm
+rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2023
+dnf install -y mysql-community-client
 
-    # App Sync
-    mkdir -p /home/ec2-user/myflaskapp
-    aws s3 sync s3://rr-capstone-5b160b287a99a6d9 /home/ec2-user/myflaskapp --region eu-west-2
-    cd /home/ec2-user/myflaskapp
-    if [ -d "flask" ]; then cd flask; fi
-    chown -R ec2-user:ec2-user /home/ec2-user/myflaskapp
+# RDS SSL Cert
+cd /home/ec2-user
+curl -O https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+chown ec2-user:ec2-user global-bundle.pem
 
-    # Virtual Env
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip
-    if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
+# App Sync
+mkdir -p /home/ec2-user/myflaskapp
+aws s3 sync s3://rr-capstone-5b160b287a99a6d9 /home/ec2-user/myflaskapp --region eu-west-2
+cd /home/ec2-user/myflaskapp
+if [ -d "flask" ]; then cd flask; fi
+chown -R ec2-user:ec2-user /home/ec2-user/myflaskapp
 
-    # Systemd Service
-    cat <<SYSTEMD > /etc/systemd/system/ritual-roast.service
+# Virtual Env
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
+
+# Systemd Service
+cat <<SYSTEMD > /etc/systemd/system/ritual-roast.service
 [Unit]
 Description=Ritual Roast Flask App
 After=network.target
@@ -63,11 +69,11 @@ StandardError=append:/var/log/flask-app.log
 WantedBy=multi-user.target
 SYSTEMD
 
-    systemctl daemon-reload
-    systemctl enable ritual-roast
-    systemctl start ritual-roast
-  EOF
-  )
+systemctl daemon-reload
+systemctl enable ritual-roast
+systemctl start ritual-roast
+EOF
+)
 
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -106,4 +112,18 @@ resource "aws_autoscaling_group" "rr_autoscaling_group" {
     aws_secretsmanager_secret_version.db_host_update,
     aws_db_instance.ritual_roast_db
   ]
+}
+
+
+resource "aws_autoscaling_policy" "rr_cpu_scaling_policy" {
+  name                   = "rr-cpu-target-tracking"
+  autoscaling_group_name = aws_autoscaling_group.rr_autoscaling_group.name
+  policy_type            = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 40.0 # Scale out when average CPU exceeds 40%
+  }
 }
