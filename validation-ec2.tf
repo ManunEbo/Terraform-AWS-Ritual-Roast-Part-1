@@ -66,22 +66,3 @@ variable "associate_public_ip_address" {
     error_message = "Please ensure that 'associate_public_ip_address' is disabled\nby setting it to false."
   }
 }
-
-# *** Perform this validation after the first deployment ***
-# validation for Web-App-SG-id
-# variable "Web-App-SG-id" {
-#     type = string
-#     validation {
-#         condition = var.Web-App-SG-id == aws_security_group.Web-App-SG.id
-#         error_message = "The specified security group '${var.Web-App-SG-id}' is invalid.\nPlease ensure that the correct security group is used.\nSupported values include ${aws_security_group.Web-App-SG.id}"
-#     }  
-# }
-
-# Ensure the new instance are created first before the old is destroyed
-# variable "create_before_destroy" {
-#   type = string
-#   validation {
-#     condition     = var.create_before_destroy == true
-#     error_message = "Please ensure that the variable ${var.create_before_destroy} is set to 'true'."
-#   }
-# }

@@ -114,43 +114,6 @@ resource "aws_iam_role" "rr_ec2_s3_secret_role" {
 
 
 # Creating the role policy
-# resource "aws_iam_policy" "rr_ec2_s3_secret_policy" {
-#   name        = "rr_ec2_s3_secret_policy"
-#   description = "Policy for EC2 to access specific s3 and Secrets Manager"
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       # Adding the policy to access a specific S3 bucket and its contents.
-#       {
-#         Effect = "Allow"
-#         Action = [
-#           "s3:GetObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource = [
-#           "${data.aws_s3_bucket.RR-bucket.arn}",
-#           "${data.aws_s3_bucket.RR-bucket.arn}/*"
-#         ]
-#       },
-#       # Adding the policy to get only secret values from Secret Manager
-#       {
-#         Effect = "Allow"
-#         Action = [
-#           "secretsmanager:GetSecretValue"
-#         ]
-#         Resource = "${data.aws_secretsmanager_secret_version.rr_db_credentials.arn}"
-#       }
-#     ]
-#   })
-
-#   tags = merge(local.common_tags, {
-#     Name = "rr_ec2_s3_secret_policy"
-#   })
-# }
-
-
-# Creating the role policy
 resource "aws_iam_policy" "rr_ec2_s3_secret_policy" {
   name        = "rr_ec2_s3_secret_policy"
   description = "Policy for EC2 to access specific s3 and Secrets Manager"
@@ -176,6 +139,7 @@ resource "aws_iam_policy" "rr_ec2_s3_secret_policy" {
         ]
         # Point to the SECRET ARN, not the SECRET_VERSION ARN
         # Resource = "${data.aws_secretsmanager_secret.rr_db_credentials.arn}"
+        # Resource = "${aws_secretsmanager_secret.db_secret.arn}*"
         Resource = "${aws_secretsmanager_secret.db_secret.arn}"
       }
     ]
@@ -207,4 +171,3 @@ resource "aws_iam_instance_profile" "rr_instance_profile" {
   name = "rr-instance-profile"
   role = aws_iam_role.rr_ec2_s3_secret_role.name # Links to your existing role
 }
-
