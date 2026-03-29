@@ -34,6 +34,8 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Retrieving the current account dynamically
+data "aws_caller_identity" "current" {}
 
 # 4. Custom Policy for Secrets Manager, S3, and Metrics
 resource "aws_iam_policy" "rr_lambda_secrets_custom_policy" {
@@ -49,7 +51,8 @@ resource "aws_iam_policy" "rr_lambda_secrets_custom_policy" {
           "secretsmanager:UpdateSecret",
           "secretsmanager:PutSecretValue"
         ]
-        Resource = "arn:aws:secretsmanager:eu-west-2:805530281081:secret:rr-db-secret-*"
+        # Preventing the hardcoding of the account id
+        Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
       },
       {
         Effect = "Allow"
