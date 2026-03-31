@@ -175,13 +175,55 @@ A separate route table is created for public resources to access the internet vi
     gateway_id = aws_internet_gateway.ritual-roast-igw.id
   }
 ```
-<strong>Security Groups<strong>
-Each Tier has it's own security group which enables only the necessary communication ingress and egress<br>
-via security group rules. The presentation tier's security group, <b>"LoadBalancer-SG"</b> has an ingress rule
-<br>that accepts traffic from the internet on port 80, and an egress rule that allows it, essentially the <br> Application Load Balancer (ALB) to send traffic to the application tier i.e. any resource that has the<br> <b>Web-App-SG</b> security group attached. In this case that would be the EC2 instances created by the ASG.<br>
-The application tier's security group <b>Web-App-SG</b> in turn has an ingress rule that accepts traffic from<br>
-the <b>LoadBalancer-SG</b> on port 5000 and an egress rule that allows communication to any protocol to any ip.<br>
-However, these instances are on a private subnet using a NAT gateway for outbound communication to the internet.<br>These instances also need to communicate both to the presentation tier and the data tier, <b>Database-SG</b> <br> security group. The <b>Database-SG</b> has an ingress rule accepting traffic on port 3306 from <b>Web-App-SG</b><br> and from itself for the secret rotation from Secrets Manager.
+<strong>Security Groups</strong>
+
+<ul>Security groups restricts ingress and egress communication between resources using rules.
+<li>
+<b>"LoadBalancer-SG"</b> concists of the following: <br>
+<ol>
+<li>ingress rule that accepts traffic from the internet on port 80</li>
+<li>egress rule allowing traffic to the application tier<br> i.e. any resource attached to <b>Web-App-SG</b> security group</li>
+<li>This allows the ALB to send traffic to the Flask application<br>served from the EC2 instances created by the ASG.</li>
+</ol>
+</li>
+
+<li>
+<b>Web-App-SG</b>
+<ol>
+<li>ingress rule that accepts traffic from <br><b>LoadBalancer-SG</b> on port 5000</li>
+<li>egress rule that allows communication to any protocol to any ip</li>
+<li>Note these instances are on a private subnet using<br>NAT gateway for outbound communication to the internet <br>thus security is not compromised.
+</li>
+<li>Since security groups are stateful, it will redirect packets back to <b>LoadBalancer-SG</b><br>
+without explicitly defining an egress rule for that</li>
+<li>The single egress rule, enables communication with <b>Database-SG</b></li>
+</ol>
+</li>
+
+<li>
+<b>Database-SG</b>
+<ol>
+<li>ingress rule accepting traffic on port 3306 from <b>Web-App-SG</b></li>
+<li>ingress rule accepting traffic on port 3306 from <b>Lambda-SG</b></li>
+</ol>
+</li>
+
+<li>
+<b>Lambda-SG</b>
+<ol>
+<li>ingress rule accepting traffic from <b>Database-SG</b> on port 3306</li>
+<li>egress rule allowing tcp traffic to any destination on port 443.<br>
+This allows the lambda function to communicate with Secrets Manager
+</li>
+</ol>
+</li>
+
+</ul>
+ 
+ 
+
+
+
 
 
 

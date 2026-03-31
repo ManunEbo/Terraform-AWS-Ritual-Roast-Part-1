@@ -88,15 +88,15 @@ resource "aws_security_group_rule" "allow_3306_from_Web-APP" {
 }
 
 # Ingress: Allow Secrets Manager Lambda (self-reference) for rotation
-resource "aws_security_group_rule" "allow_3306_from_Database-SG" {
-  type                     = "ingress"
-  description              = "Allow TCP 3306 from itself for rotation"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.Database-SG.id
-  source_security_group_id = aws_security_group.Database-SG.id
-}
+# resource "aws_security_group_rule" "allow_3306_from_Database-SG" {
+#   type                     = "ingress"
+#   description              = "Allow TCP 3306 from itself for rotation"
+#   from_port                = 3306
+#   to_port                  = 3306
+#   protocol                 = "tcp"
+#   security_group_id        = aws_security_group.Database-SG.id
+#   source_security_group_id = aws_security_group.Database-SG.id
+# }
 
 # Egress: Standard all-traffic outbound (needed for DB responses)
 # This allows the lambda function to talk to Secrets Manager and the database
@@ -134,7 +134,7 @@ resource "aws_security_group" "Lambda-SG" {
   })  
 }
 
-# Egress: Lambda -> Database (port 3306)
+# Ingress: Lambda -> Database (port 3306)
 resource "aws_security_group_rule" "lambda_egress_to_db" {
   type = "ingress" # Note: this will be used in Database-SG above
   from_port = 3306
