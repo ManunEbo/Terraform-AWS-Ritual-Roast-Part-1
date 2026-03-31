@@ -1,5 +1,5 @@
 resource "aws_db_subnet_group" "rr_db_subnet_group" {
-  name       = "rr-db-subnet-group"
+  name = "rr-db-subnet-group"
   subnet_ids = [
     aws_subnet.database_subnets[0].id,
     aws_subnet.database_subnets[1].id,
@@ -9,7 +9,7 @@ resource "aws_db_subnet_group" "rr_db_subnet_group" {
 
 resource "aws_db_instance" "ritual_roast_db" {
   identifier = "rr-db"
-  name       = "ritual_roast" # AWS Provider 3.x syntax
+  db_name    = "ritual_roast" # Corrected for AWS Provider 4.x/5.x/6.x
 
   engine            = var.mysql_engine
   instance_class    = var.db_instance_class

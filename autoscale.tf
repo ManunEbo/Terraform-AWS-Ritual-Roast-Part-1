@@ -73,7 +73,7 @@ systemctl daemon-reload
 systemctl enable ritual-roast
 systemctl start ritual-roast
 EOF
-)
+  )
 
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -122,7 +122,7 @@ resource "aws_autoscaling_policy" "rr_cpu_scaling_policy" {
 
   # The "Smoothing" Buffer: 
   # Wait 300 seconds (3 mins) after a scaling activity before doing another one.
-  estimated_instance_warmup = 180 
+  estimated_instance_warmup = 180
 
   target_tracking_configuration {
     predefined_metric_specification {
@@ -133,6 +133,6 @@ resource "aws_autoscaling_policy" "rr_cpu_scaling_policy" {
     # SCALE-IN PROTECTION:
     # This prevents "Erratic Scaling Down" by forcing a 3-minute wait 
     # after the load drops before an instance is terminated.
-    disable_scale_in = false 
+    disable_scale_in = false
   }
 }

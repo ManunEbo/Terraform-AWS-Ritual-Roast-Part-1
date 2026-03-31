@@ -17,7 +17,9 @@ resource "aws_lambda_function" "secret_rotation_function" {
       aws_subnet.database_subnets[1].id,
       aws_subnet.database_subnets[2].id
     ]
-    security_group_ids = [aws_security_group.Database-SG.id]
+    # security_group_ids = [aws_security_group.Database-SG.id]
+    # Change to lambda security group
+    security_group_ids = [aws_security_group.Lambda-SG.id]
   }
 
   # Ensure networking permissions exist before creating the Lambda
