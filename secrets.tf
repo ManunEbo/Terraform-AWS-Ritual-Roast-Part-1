@@ -46,6 +46,11 @@ resource "aws_secretsmanager_secret_version" "db_host_update" {
 
   # CRITICAL: Ensures the DB is 100% ready before we fetch its address
   depends_on = [aws_db_instance.ritual_roast_db]
+
+  # Critical Fix: Stops Terraform from resetting the password on subsequent tf apply!
+  lifecycle {
+    ignore_changes = [ secret_string ]
+  }
 }
 
 # 5. Rotation Logic
