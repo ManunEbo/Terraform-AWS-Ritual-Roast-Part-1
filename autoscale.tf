@@ -134,9 +134,9 @@ resource "aws_autoscaling_policy" "rr_cpu_scaling_policy" {
     }
     target_value = 50.0
 
-    # SCALE-IN PROTECTION:
-    # This prevents "Erratic Scaling Down" by forcing a 3-minute wait 
-    # after the load drops before an instance is terminated.
+    # SCALE-IN PERMISSION:
+    # Setting this to false allows the ASG to shrink back down when traffic subsides.
+    # AWS automatically handles the cooldown period before scaling in to prevent thrashing.
     disable_scale_in = false
   }
 }

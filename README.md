@@ -54,7 +54,7 @@ The configuration specification for this project can be found at <a href="./docu
 EC2 instances sit in private subnets, only accessible via the ALB or Systems Manager<br>
 (via the attached SSM IAM policy).<br>
 
-Since all subnets are by default associated to the VPC default route table, to prevent exposing private resources <br>to the internet, a single route is created via NAT gateways placed in a public subnet that has an internet gateway(IGW) attached.<br>This essentially gives private resources an Egress only communication with the outside.
+Since all subnets are by default associated to the VPC default route table, to prevent exposing private resources <br>to the internet, a single route is created via NAT gateways placed in a public subnet that has an internet gateway(IGW) attached.<br>This essentially gives private resources an egress only communication with the outside.
 </p>
 
 ```
@@ -231,9 +231,9 @@ for authentication</li>
 </ul>
 
 
-<h3>6. 🚀 Technical Highlights</h3>
+<h1>6. 🚀 Technical Highlights</h1>
 
-<strong>VPC</strong>
+<h2>VPC and Subnetting</h2>
 Ritual Roast requires 16 subnets or sub networks from the VPC CIDR <strong>(10.16.0.0/16)<strong><br> 
 This can be achieved by borrowing from the host bits. The table below shows the derivation of the subnets.<br>
 </p>
@@ -332,20 +332,231 @@ Note, in every subnet, there are 5 IP addresses that are reserved thus cannot be
 <li><b>10.16.0.3:</b> Reserved by AWS for future use</li>
 <li><b>10.16.15.255:</b> Network broadcast address</li>
 </ul>
-</p>
+
 Elastic IPs will be allocated for the NAT gateway and released when the project is destroyed.<br>
 With respect to Terraform, the creation of the VPC and Subnets are handled in <a href="./networking.tf">networking.tf</a>.<br>Both the NAT gateway and the IGW creation are handled in <a href="./gateways.tf">gateways.tf<a>
 
-<b>Routing</b>
--> Routing through default route table via NAT
--> Routing through public route table via IGW
+</p>
 
 
 
--> Security groups
+
+-> ASG
+
+        -> 
+<h2>AutoScaling Group (ASG)</h2>
+<p>
+ASG bridges the gap between static infrastructure and dynamic, self-healing architecture.<br>
+
+The use of 3 separate subnets in 3 different AZs ensures high availability within the region.<br>
+i.e. if one AZ goes down, we still have 2 available.<br>
+</p>
+#### Then come here ####
+<h3>Launch template - Userdata</h3>
+      -> systemd service
+      -> mysql client
 
 
 
+
+
+<h3>Updating Launch template</h3>
+
+<p>
+Updating the Launch template will lead to AWS throwing an error regarding the ASG<br>
+below are the steps that lead to this error:
+</p>
+
+<ol>
+<li>In AWS the name of the ASG is it's unique identifier</li>
+<li>AWS does not allow two ASGs to exist with the same name<br>
+simultaneously.
+</li>
+<li>AWS also does not allow the renaming of an ASG once created<br>
+i.e. it's an immutable property
+</li>
+
+</ol>
+<br>
+The problem: Terraform's default behaviour<br>
+Lets assume we don't change ASG name while updating the Launch template<br>
+Terraform will try to do this in the following order
+<ol>
+<li>Terraform sees Launch template changed</li>
+<li>To prevent application down time</li>
+<li>It attempts to create the <b>new</b> ASG with the <b>new</b> template<br>
+before destroying the old ASG
+</li>
+<li>AWS throws an error:<br>
+<i><b>"AutoScalingGroup with name 'rr-asg' already exists."</b></i>
+</li>
+<li>Forcing Terraform to delete the old one first using<br>
+<i><b>"lifecycle { create_before_destroy = false }"</b></i><br>
+Would create a different problem.
+</li>
+<li>AWS takes several minutes to drain traffic from an instance<br>
+and delete an ASG</li>
+<li>Terraform would time out waiting for the old ASG to be deleted<br>
+so that it can use the name to create the new one
+</li>
+
+</ol>
+
+<br>
+The solution:
+We bypass the above problems by injecting some random hex characters into the ASG name
+using the latest launch template version:
+<br>
+</p>
+
+```
+${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}
+
+name = "rr-asg-${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}"
+```
+<p>
+This is a strategy called "Immutable Infrastructure" i.e. replacing resources entirely instead<br>
+of modifying them in place.
+
+Now when we run:
+</p>
+
+```
+$ tf apply -auto-approve
+```
+
+<p>
+The following happens:
+
+<ol>
+<li>
+Terraform sees the version in the name string changed<br>
+from <b>"v1-abcd"</b> to <b>"v2-abcd"</b><br>
+<i>Note, these are example random hex values that would be used</i>
+</li>
+<li>It creates a brand new ASG named <b>"rr-asg-2-abcd"</b>
+side by side with the old ASG
+</li>
+<li>For a brief moment both sets of instances will be running</li>
+<li>Then the ALB will start sending traffic to the new ASG</li>
+<li>Once the new instances are healthy<br>
+Terraform safely deletes the old ASG <b>rr-asg-1-abcd</b><br>
+and it's instances
+</li>
+<li>This is essentially a Blue/Green style deployment</li>
+<li>Ultimately, the end user experiences zero downtime</li>
+
+</ol>
+
+</p>
+
+
+<h3>Target tracking configuration</h3>
+
+<p>
+Target tracking allows the infrastructure to smooth out spikes in traffic without over-provisioning<br>
+and wasting money. This process is facilitated by communication between ALB, CloudWatch and ASG.<br>
+Setting the target tracking to 50.0 is the middle ground, the sweet spot, perhaps not optimal. However, for<br>
+the purpose of this demonstration, it is satisfactory.<br>
+</p>
+
+```
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 50.0
+
+    disable_scale_in = false
+  }
+```
+<p>
+When traffic increases, the following happen:<br>
+#### START HERE ####
+<ol>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+</ol>
+
+<br>
+When traffic drops, the following happen:
+
+<ol>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+</ol>
+
+
+
+
+<h3>Including a "depends_on" parameter:</h3>
+
+```
+  depends_on = [
+    aws_secretsmanager_secret_version.db_host_update,
+    aws_db_instance.ritual_roast_db
+  ]
+```
+
+<p>
+specifies the order in which resources will be created. 
+
+<ol>
+<li>This ensures that the database is created first</li>
+<li>
+Once the database is created, the secret storing database credentials is updated<br>
+with the database host information<br>
+<b>"host     = aws_db_instance.ritual_roast_db.address"</b>
+</li>
+<li>The ASG then launches instances that use the host information<br>
+to connect to the database
+</li>
+</ol>
+
+Without the above sequence<br>
+
+<ol>
+<li>Terraform would create ASG and RDS instances in parralel<br>
+to save time.
+</li>
+<li>AWS RDS takes 5 to 13 minutes to fully provision</li>
+<li>While the ASG will spin up EC2 instances in a few minutes</li>
+<li>The instances will attempt to connect to the database<br>
+with incorrect host value i.e. the "PLACEHOLDER"
+</li>
+<li>The database is unvailable as its still provisioning</li>
+<li>The Application crashes and triggers an exit<br>
+<b>"sys.exit(1)</b>
+</li>
+<li>Systemd waits 5 seconds and restarts the application service<br>
+and it crashes again
+</li>
+<li>The ALB checks the /health endpoint of the instances</li>
+<li>since the application keeps crashing, the health checks fails.</li>
+<li>Since the ASG is using ALB health metrics<br>
+The ALB will tell the ASG that the instances are unhealthy
+</li>
+<li>The ASG would then terminate those instances and recreate new ones<br>
+which would also fail their health checks
+</li>
+<li>This loop would go on until the RDS instance is ready to receive traffic
+</li>
+<li>A very expensive process</li>
+
+</ol>
+
+
+
+
+
+
+</p>
 
 -> S3
     -> python scrip for flask app
@@ -354,12 +565,6 @@ With respect to Terraform, the creation of the VPC and Subnets are handled in <a
 -> Roles
 
 -> Lambda function
-
--> ASG
-    -> Launch template - Userdata
-        -> systemd service
-        -> mysql client
-        -> 
 
 -> Secret manager / Chicken and egg problem
 
