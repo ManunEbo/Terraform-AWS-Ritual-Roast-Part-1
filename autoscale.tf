@@ -96,7 +96,11 @@ resource "aws_autoscaling_group" "rr_autoscaling_group" {
   desired_capacity    = 2
   min_size            = 2
   max_size            = 4
-  vpc_zone_identifier = [aws_subnet.web_subnets[0].id, aws_subnet.web_subnets[1].id]
+  vpc_zone_identifier = [
+    aws_subnet.web_subnets[0].id,
+    aws_subnet.web_subnets[1].id,
+    aws_subnet.web_subnets[2].id
+    ]
 
   health_check_type         = "ELB"
   health_check_grace_period = 300
