@@ -38,7 +38,7 @@ chown ec2-user:ec2-user global-bundle.pem
 
 # App Sync
 mkdir -p /home/ec2-user/myflaskapp
-aws s3 sync s3://rr-capstone-5b160b287a99a6d9 /home/ec2-user/myflaskapp --region eu-west-2
+aws s3 sync s3://${var.app_source_bucket} /home/ec2-user/myflaskapp --region eu-west-2
 cd /home/ec2-user/myflaskapp
 if [ -d "flask" ]; then cd flask; fi
 chown -R ec2-user:ec2-user /home/ec2-user/myflaskapp

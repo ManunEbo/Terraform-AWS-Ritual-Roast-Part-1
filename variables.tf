@@ -93,3 +93,10 @@ variable "db_password" {
 variable "s3_bucket" {
   type = string
 }
+
+# The Ritual Roast S3 bucket name
+variable "app_source_bucket" {
+  type        = string
+  description = "The S3 bucket holding the Flask application source code"
+  default     = "rr-capstone-5b160b287a99a6d9"
+}
