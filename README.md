@@ -456,8 +456,8 @@ and it's instances
 <p>
 Target tracking allows the infrastructure to smooth out spikes in traffic without over-provisioning<br>
 and wasting money. This process is facilitated by communication between ALB, CloudWatch and ASG.<br>
-Setting the target tracking to 50.0 is the middle ground, the sweet spot, perhaps not optimal. However, for<br>
-the purpose of this demonstration, it is satisfactory.<br>
+Setting the target tracking to 50.0 is the middle ground, perhaps not optimal.<br>
+However, for the purpose of this demonstration, it is satisfactory.<br>
 </p>
 
 ```
@@ -472,28 +472,73 @@ the purpose of this demonstration, it is satisfactory.<br>
 ```
 <p>
 When traffic increases, the following happen:<br>
-#### START HERE ####
+
 <ol>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
+<li>
+The ALB receives increased traffic and<br>
+distributes between the two instances<br>
+using Round-Robin algorithm
+</li>
+<li>
+CPU spikes above the threshold of 50%, averaged across the two instances<br>
+lets say it reaches 80%
+</li>
+<li>
+The CloudWatch alarm is triggered and the ASG is notified<br>
+of the high CPU utilization across the two instances
+</li>
+<li>
+ASG spins up an extra instance or two based on the Launch template<br>
+up to the defined maximum, 4 in this case.
+</li>
+<li>
+Instance(s) prepare to receive traffic in the warm up period<br>
+3 minutes in this case. Here the instance runs the <b>user_data</b> script.<br>
+This is where the packages are installed<br>
+and the application tests connection to the database.
+</li>
+<li>
+After the 3 minutes, the instance(s) are ready to receive traffic.<br>
+The ALB registers the new instances and starts sending them traffic.<br>
+The distribution of the traffic between the instances reduces the<br>
+"Average CPU Utilization" down towards the target 50%
+</li>
 </ol>
 
 <br>
 When traffic drops, the following happen:
 
 <ol>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
+<li>
+The ALB receives few traffic and the CPU<br>
+utilization drops significantly below the threshold
+</li>
+<li>
+This triggers a "Low CPU Alarm" in CloudWatch<br>
+and CloudWatch notifies the ASG
+</li>
+<li>
+This setting "<b>disable_scale_in = false</b>" enables the ASG<br>
+to reduce the number of instances, scale in.<br>
+The ASG selects an instance to terminate
+</li>
+<li>
+The process of connection draining starts before the ASG terminates the instance<br>
+The ALB stops sending new traffic to the instance and the instance is allowed to finish<br>
+any requests it is currently processing before termination.
+</li>
+<li>When the draining is complete the ASG terminates the instance<br>
+
+</li>
 <li></li>
 </ol>
-
-
-
+<br>
+Although this makes the infrastructure dynamic and flexible to handle demand more effectively<br>
+the warm up period of 3 minutes is a barrier which does impact on the availability of services,<br>
+when it's really needed. There are alternatives, <b>not discussed here</b>, that reduce warm up period<br>
+significantly such as containerization with ECS or Fargate. This will drop the warmup time from 3 minutes to<br>
+10-15 seconds.
+</p>
 
 <h3>Including a "depends_on" parameter:</h3>
 
