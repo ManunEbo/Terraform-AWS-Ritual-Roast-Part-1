@@ -351,12 +351,46 @@ ASG bridges the gap between static infrastructure and dynamic, self-healing arch
 The use of 3 separate subnets in 3 different AZs ensures high availability within the region.<br>
 i.e. if one AZ goes down, we still have 2 available.<br>
 </p>
-#### Then come here ####
+
+
 <h3>Launch template - Userdata</h3>
       -> systemd service
       -> mysql client
 
+<p>
+The original userdata script from the course had a few issues that needed attention:
+<ol>
+<li>
+The command to run ritual-roast.py looked like:<br>
+<code>nohup python3 ritual-roast.py > /var/log/flask-app.log 2>&1 &</code><br>
+This just ensures that the command runs, in the background,<br>
+even if the shell is terminated and that it redirects errors to<br>
+standard out which is then sent to <b>/var/log/flask-app.log</b>
+</li>
+<li>If the App crashes, this would not restart it</li>
+<li>Creating a systemd service enables Linux to restart the service<br>
+if it crashes.
+</li>
+<li>
+Using the <b>exec</b> command captures the entire scripts output<br>
+like a blackbox flight recorder<br>
+<code>exec > /var/log/user-data.log 2>&1</code><br>
+not just the output of running the python script, as in the original.
+</li>
+<li>
+This is useful because <b>AWS user data runs completely in the background<br>
+and if the script fails, it fails silently, no output</b><br>
+Putting the exec command at the top of the output means we're collecting<br>
+all the output, including errors, and redirecting them to a file.
+</li>
 
+#### Start Here #####
+<li></li>
+<li></li>
+<li></li>
+</ol>
+
+</p>
 
 
 
