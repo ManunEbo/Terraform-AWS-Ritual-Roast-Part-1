@@ -43,6 +43,8 @@ def connect_to_db():
             password=secrets["password"],
             database=secrets["dbname"],
             port=secrets["port"],
+
+            # Ensuring that the traffic is encrypted using ssl
             ssl_ca='/home/ec2-user/global-bundle.pem', # <--- This is where the magic happens
             ssl_verify_cert=True                       # <--- This forces the verification
         )

@@ -338,24 +338,14 @@ With respect to Terraform, the creation of the VPC and Subnets are handled in <a
 
 </p>
 
-
-
-
--> ASG
-
-        -> 
 <h2>AutoScaling Group (ASG)</h2>
 <p>
 ASG bridges the gap between static infrastructure and dynamic, self-healing architecture.<br>
-
 The use of 3 separate subnets in 3 different AZs ensures high availability within the region.<br>
 i.e. if one AZ goes down, we still have 2 available.<br>
 </p>
 
-
 <h3>Launch template - Userdata</h3>
-      -> systemd service
-      -> mysql client
 
 <p>
 The original userdata script from the course had a few issues that needed attention:
@@ -368,8 +358,8 @@ even if the shell is terminated and that it redirects errors to<br>
 standard out which is then sent to <b>/var/log/flask-app.log</b>
 </li>
 <li>If the App crashes, this would not restart it</li>
-<li>Creating a systemd service enables Linux to restart the service<br>
-if it crashes.
+<li>Registering the application as a service with systemd service<br>
+enables Linux to restart the service if it crashes.
 </li>
 <li>
 Using the <b>exec</b> command captures the entire scripts output<br>
@@ -384,21 +374,39 @@ Putting the exec command at the top of the output means we're collecting<br>
 all the output, including errors, and redirecting them to a file.
 </li>
 
-#### Start Here #####
-<li></li>
-<li></li>
-<li></li>
+<li>
+Downloading the AWS global-bundle.pem ensures that communication with the database<br>
+are secured via ssl. In additions adding the <b>-sS --fail -O</b> options ensure that<br>
+strict certificate checking is performed and that the script <b>hard-fails</b> if the secure<br>
+connection can't be verified.
+</li>
+
+<li>
+Ensuring root owns the certificate and readonly access for others<br>
+enhances security i.e. if the ec2-user owns the certificate a breach of security<br>
+would give a bad actor ec2-user permissions enabling them to swap the valid<br>
+certificate with a malicious copy.
+</li>
+
+<li>
+However, no checksum of the certificate file is carried out here.<br>
+A SHA256 Checksum would be a security enhancement to ensure that<br>
+the certificate has not been tampered with.
+</li>
+
+<li>
+The use of an isolated Python virtual environment prevents dependency conflict<br>
+between the application and the operating system native tools.
+</li>
+
 </ol>
-
 </p>
-
-
 
 <h3>Updating Launch template</h3>
 
 <p>
-Updating the Launch template will lead to AWS throwing an error regarding the ASG<br>
-below are the steps that lead to this error:
+Updating the Launch template will lead to AWS throwing an error regarding the ASG.<br>
+Below are the steps that lead to this error:
 </p>
 
 <ol>
@@ -591,7 +599,9 @@ specifies the order in which resources will be created.
 <li>
 Once the database is created, the secret storing database credentials is updated<br>
 with the database host information<br>
+<code>
 <b>"host     = aws_db_instance.ritual_roast_db.address"</b>
+</code>
 </li>
 <li>The ASG then launches instances that use the host information<br>
 to connect to the database
@@ -630,16 +640,49 @@ which would also fail their health checks
 
 </ol>
 
-
-
-
-
-
 </p>
 
+<h2>S3 remote bucket</h2>
+<p>
+Using a separate Terraform deployment, an S3 bucket was created to act as the Ritual Roast central repository.<br>
+This S3 is used as the repository for the application code; the backend for the Terraform state file<br>
+and the state lock file; it also houses the index.py script for the lambda function to rotate secrets.<br>
+The bucket has versioning enabled facilitating the flexibility to roll back faulty configuration changes/updates.
+</p>
+
+<h3>Application repository</h3>
 -> S3
     -> python scrip for flask app
-    -> Remote backend and state lock
+<p>
+
+The source code for the flask application is bundled up and uploaded to this bucket. This decouples the source<br>
+code from the project infrastructure enabling greater flexibility for pushing changes.<br>
+All instances created by the ASG will pull code from this bucket. This means all the instances will have the<br> latest code, at the point of creation. Thus identical, with the exception of new updates.<br>
+To refresh the instances so they have the latest updates we can run the following:
+</p>
+
+```
+aws autoscaling start-instance-refresh \
+    --auto-scaling-group-name rr_autoscaling_group \
+    --preferences '{"MinHealthyPercentage": 50}'
+```
+<p>
+The aws cli is used above instead of Terraform because no changes have been made to the ASG or Launch template<br>
+meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy<br>
+and replace the instances one by one pulling the freshly updated source code in the process.<br>
+Note, the instances use roles with s3 bucket access policy to sync with s3, at boot.
+</p>
+
+<h3>Python AWS Lambda for rotaing secrets</h3>
+    -> index.py for lambda function
+
+
+
+    -> Remote backend and state file and state lock
+
+<p>
+State Management Modernization: > This project leverages Native S3 State Locking (introduced in Terraform 1.10+). By setting use_lockfile = true, we eliminate the need for a separate DynamoDB table, reducing architectural complexity and cost while maintaining full protection against concurrent state modifications.
+</p>
 
 -> Roles
 
