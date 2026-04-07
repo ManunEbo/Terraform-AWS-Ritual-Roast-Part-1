@@ -33,8 +33,12 @@ dnf install -y mysql-community-client
 
 # RDS SSL Cert
 cd /home/ec2-user
-curl -O https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-chown ec2-user:ec2-user global-bundle.pem
+curl -sS --fail -O https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
+# Lockdown file permissions
+# Root owns it, ec2-user can ONLY read it (4 = read, 0 = none)
+chown root:root global-bundle.pem
+chmod 444 global-bundle.pem
 
 # App Sync
 mkdir -p /home/ec2-user/myflaskapp
