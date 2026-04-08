@@ -646,7 +646,7 @@ which would also fail their health checks
 <p>
 Using a separate Terraform deployment, an S3 bucket was created to act as the Ritual Roast central repository.<br>
 This S3 is used as the repository for the application code; the backend for the Terraform state file<br>
-and the state lock file; it also houses the index.py script for the lambda function to rotate secrets.<br>
+and the state lock file; it also houses the index.zip script for the lambda function to rotate secrets.<br>
 The bucket has versioning enabled facilitating the flexibility to roll back faulty configuration changes/updates.
 </p>
 
@@ -658,7 +658,7 @@ The bucket has versioning enabled facilitating the flexibility to roll back faul
 The source code for the flask application is bundled up and uploaded to this bucket. This decouples the source<br>
 code from the project infrastructure enabling greater flexibility for pushing changes.<br>
 All instances created by the ASG will pull code from this bucket. This means all the instances will have the<br> latest code, at the point of creation. Thus identical, with the exception of new updates.<br>
-To refresh the instances so they have the latest updates we can run the following:
+To refresh the instances so they have the latest updates we can run the following on aws cli:
 </p>
 
 ```
@@ -672,6 +672,83 @@ meaning "tf plan" will show no changes to be made. However, forcing an instance 
 and replace the instances one by one pulling the freshly updated source code in the process.<br>
 Note, the instances use roles with s3 bucket access policy to sync with s3, at boot.
 </p>
+
+<h3>Flask App (ritual-roast.py)</h3>
+<p>
+This single script is the infrastructure aware central nervous system of the project.<br>
+It is the intersection betweeen the python backend and the Flask frontend web server<br>
+It does the following:
+<ol>
+<li>
+The <b>template_folder</b> is where Flask looks for <b>index.html</b>, the entry point
+</li>
+
+<li>
+The <b>static_folder</b> is where the .css, .js and the images are found<br>
+This stylizes and animates the website 
+</li>
+
+<li>
+The <b>CORS</b> (Cross Origin Resourse Sharing) here tells the browser<br>
+This is an open API. However, in production the domain name would be used in place of "*"<br>
+<code>CORS(app, resources={r"/*": {"origins": "*"}})</code><br>
+But here it assists the ALB by preventing the browser muting the API response.
+</li>
+
+<li>
+The script interacts with AWS via boto3 to pull DB credentials<br>
+from Secrets Manager
+</li>
+
+<li>
+These credentials are then used in conjuction with an ssl certificate<br>
+to encrypt and securely connect to the DB in a <b>Zero Trust</b> fashion<br>
+i.e. we assume a breach even in a private VPC so we lock down everything.
+</li>
+
+<li>
+The DB connection function completes with a create table query,<br>
+if the table does not yet exist. 
+</li>
+
+<li>
+<b>The script has several functions to perform specific tasks with the database</b>
+</li>
+
+<li>
+The <b>get_recipes</b> function retrieves the recipes from the database
+</li>
+
+<li>
+The <b>add_recipe</b> function sends a new recipe to the database
+</li>
+
+<li>
+The <b>health_check</b> function is the liveness probe that the ALB<br>
+sends HTTP get requests to ensure that the EC2 instance is healthy<br>
+i.e. when the ALB probes <b>/health</b> the EC2 instance runs this function<br>
+and sends the response back to the ALB.
+</li>
+
+<li>
+The <b>serve</b> function is the traffic controller linking the incoming URL request (the path)<br>
+to the physical file on the webserver. <b>If the path exists</b>, it delivers the contents<br>
+else it returns what ever is setup for the 404 NOT FOUND.
+</li>
+
+<li>
+Finally, the `__main__` block acts as a startup gatekeeper.<br>
+It forces the app to verify the database connection before it tries to host the website.<br>
+If the database is missing, the script kills itself on purpose with a `sys.exit(1)`.<br>
+This is a deliberate "Fail-Fast" move: it prevents the server from sitting there broken<br>
+and tells the OS (Systemd) to keep rebooting the app until the database finally wakes up.
+</li>
+
+</ol>
+
+</p>
+
+
 
 <h3>Python AWS Lambda for rotaing secrets</h3>
     -> index.py for lambda function
