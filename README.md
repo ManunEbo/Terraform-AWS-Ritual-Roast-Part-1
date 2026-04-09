@@ -750,18 +750,85 @@ and tells the OS (Systemd) to keep rebooting the app until the database finally 
 
 
 
-<h3>Python AWS Lambda for rotaing secrets</h3>
-    -> index.py for lambda function
+<h3>AWS Lambda for rotaing secrets Python code</h3>
+
+<p>
+This script breaks down the secrets rotation process into functions that perform specific tasks:<br>
+<ul>
+<li>`createSecret`, Generate a new password</li>
+<li>`setSecret`, Change the password on the database</li>
+<li>`testSecret`, test connection using new password</li>
+<li>`finishSecret`, update the secret credentials to the new password</li>
+</ul>
+The various components are then invoked as per usecase via the handler function, the switchboard.<br>
+Below are brief summaries of each component:
+
+<ol>
+<li>
+<b>Python Logging module</b> links the lambda function to CloudWatch Logs<br>
+i.e. this sends metrics, error logs in this case, that aids debugging failures.<br>
+Note, the log level has been set to `INFO` which reports general,<br>
+no debugging noise, outputs and errors.<br>
+`logger = logging.getLogger()`<br>`logger.setLevel(logging.INFO)`
+</li>
+
+
+<li>
+`generate_random_password`: This function generates a new 16 character<br>
+strong password that will replace the current secret.
+</li>
+
+<li>
+`get_secret_dict`: This function retrieves and parses the secret in json format ready to be consumed by<br>
+other functions. The use of token identifies and locks in the specific version of the secret `VersionId`<br>
+for the tasks at hand. In additions, `VersionStage` allows the lambda function to work with both the old<br>
+`AWSCURRENT` and the new `AWSPENDING` passwords i.e. to change the password, lambda needs to first<br>
+authenticate using the current password and then reset the password to the new one.
+</li>
+
+<li>
+`create_secret`: This function performs the following:
+<ul>
+<li>Retrieves the secret, in json format dictionary, with `VersionStages` set as `AWSCURRENT`</li>
+<li>Invokes the `generate_random_password` function to create a new password</li>
+<li>Replacing the <b>dictionary's</b> `AWSCURRENT` password inplace</li>
+<li>
+Pushes the change back to Secrets Manager<br>
+tagging it with `VersionStages` equal to `AWSPENDING`
+</li>
+<li>
+The push is ignored if a secret with `VersionStages` equal to `AWSPENDING`<br>
+already exists. 
+</li>
+<ul>
+</li>
+
+###### START HERE ######
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+
+</ol>
+
+</p>
 
 
 
+
+
+<h3>Terraform remote backend</h3>
     -> Remote backend and state file and state lock
 
 <p>
 State Management Modernization: > This project leverages Native S3 State Locking (introduced in Terraform 1.10+). By setting use_lockfile = true, we eliminate the need for a separate DynamoDB table, reducing architectural complexity and cost while maintaining full protection against concurrent state modifications.
 </p>
 
+<h2>IAM Roles</h2>
 -> Roles
+
+<h2>Lambda Function</h2>
 
 -> Lambda function
 
