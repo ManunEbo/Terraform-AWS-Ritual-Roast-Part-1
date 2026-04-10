@@ -797,25 +797,143 @@ Pushes the change back to Secrets Manager<br>
 tagging it with `VersionStages` equal to `AWSPENDING`
 </li>
 <li>
+This ensures that we don't overwrite the current password<br>
+by mistake before the change over.
+</li>
+<li>
 The push is ignored if a secret with `VersionStages` equal to `AWSPENDING`<br>
 already exists. 
 </li>
-<ul>
+</ul>
 </li>
 
-###### START HERE ######
-<li></li>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
+<li>
+`set_secret`: This function is the only point of contact with the database.<br>
+It performs the following tasks:<br>
+<ol>
+<li>Retrives both the current password `AWSCURRENT`<br>
+and the new password `AWSPENDING` </li>
+<li>Connects to the database using the current password</li>
+<li>
+Executes an `ALTER USER` command to change the password<br>
+to the new password.<br>
+
+```cursor.execute(f"ALTER USER '{username}'@'%' IDENTIFIED BY '{new_password}';")``` <br>
+</li>
+<li>Then commits the change and closes the connection</li>
+<li>
+If something goes wrong, the error is handled with the exception<br>
+which logs the error.<br>
+
+```
+ except Exception as e:
+        logger.error(f"Failed to update database password: {e}")
+        raise 
+```
+
+</li>
+
+</ol>
+</li>
+
+<li>
+`test_secret`: This function proves that the password update was a success.<br>
+It performs the following tasks:
+<ol>
+<li>
+Tests connection to the database with the newly updated password.<br>
+That's the password labeled as `AWSPENDING`
+</li>
+<li>If the connection is successful it closes the connection.</li>
+<li>
+If it errors out, it logs the error before the raised exception terminates the execution<br>
+and reports the failure to CloudWatch, essentially slamming the emergency breaks on and<br>
+sounding the alarm.
+
+<pre><code>
+except Exception as e:
+    logger.error(f"Failed to update database password: {e}")
+    raise 
+</code></pre>
+</li>
+
+
+</ol>
+</li>
+
+<li>
+`finish_secret`: This function updates the secret in Secrets Manager.<br>
+It performs the following tasks:<br>
+<ol>
+<li>Retrieves the secret from Secrets Manager</li>
+
+<li>
+Verifies that the secret hasn't already been updated (swapped)<br>
+by checking that the version id of `AWSCURRENT` doesn't match the token,<br>
+the id on `AWSPENDING` password, if it does then it skip this step and exits.
+</li>
+
+<li>
+If the secret hasn't been swapped yet then remove the version id from `current_version`<br>
+and move the version id to ``token` which would update the value held in<br>
+`AWSCURRENT` to the value in `AWSPENDING`.<br>
+This is called an "atomic swap".
+</li>
+</ol>
+</li>
+
+<li>
+`lambda_handler`: This function is the central nervous system of the operation,<br>
+responsible for managing the secrets lifecycle from start to finish.<br>
+It performs the following tasks:
+<ol>
+<li>
+Secret manager invokes this function, passing to it two arguments:
+<ol>
+<li>
+<b>event</b>: A dictionary containing 4 key values:<br>
+SecretId, ClientRequestToken, Step, and RotationToken<br>
+Note, the step is the current phase of the rotation<br>
+one of; `createSecret`, `setSecret`, `testSecret`, or `finishSecret`
+</li>
+
+<li>
+<b>context</b>: This provides metadata regarding the execution environment<br>
+such as `aws_request_id`.
+</li>
+</ol>
+</li>
+
+<li>
+The function extracts the key values from the event into variables<br>
+for later use.
+</li>
+<li>
+The function verifies that the rotation is enabled `RotationEnabled` by retrieving<br>
+the metadata with `describe_secret`.<br>
+Note, if rotation is <b>not</b> enabled, the error is logged, and this will raise<br>
+a `ValueError` which terminates the execution and reports a failure metric to CloudWatch.
+</li>
+<li>
+Once `RotationEnabled` is verified execution of the rotation functions begin,<br>
+conditional on the phase, `step` value, retrieved from the event.
+</li>
+
+<li>
+Thus Secrets Manager invokes this function 4 times each time with a different value<br>
+for phase.
+</li>
+<li>
+If an invalid value is passed into `step` then the error is logged and a `ValueError` is raised.<br>
+once again terminating the execution and reporting the failure to CloudWatch.
+</li>
+
+</ol>
+</li>
 
 </ol>
 
 </p>
-
-
-
 
 
 <h3>Terraform remote backend</h3>
