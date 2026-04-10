@@ -36,7 +36,9 @@ def lambda_handler(event, context):
     elif step == "finishSecret":
         finish_secret(client, arn, token)
     else:
-        raise ValueError(f"Invalid step parameter: {step}")
+        msg = f"Invalid step parameter: {step}"
+        logger.error(msg) # Logging the error
+        raise ValueError(msg) # Now AWS also knows it failed
 
 def create_secret(client, arn, token):
     # Fetch current secret to get the "hidden" username, dbname, host, etc.
