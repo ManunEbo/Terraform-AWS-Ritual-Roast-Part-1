@@ -54,17 +54,17 @@ resource "aws_iam_policy" "rr_lambda_secrets_custom_policy" {
         # Preventing the hardcoding of the account id
         Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
       },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          data.aws_s3_bucket.RR-bucket.arn,
-          "${data.aws_s3_bucket.RR-bucket.arn}/*"
-        ]
-      },
+      # {
+      #   Effect = "Allow"
+      #   Action = [
+      #     "s3:GetObject",
+      #     "s3:ListBucket"
+      #   ]
+      #   Resource = [
+      #     data.aws_s3_bucket.RR-bucket.arn,
+      #     "${data.aws_s3_bucket.RR-bucket.arn}/*"
+      #   ]
+      # },
       {
         Effect = "Allow"
         Action = [
