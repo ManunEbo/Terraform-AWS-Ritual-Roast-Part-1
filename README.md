@@ -748,8 +748,6 @@ and tells the OS (Systemd) to keep rebooting the app until the database finally 
 
 </p>
 
-
-
 <h3>AWS Lambda for rotaing secrets Python code</h3>
 
 <p>
@@ -818,6 +816,7 @@ and the new password `AWSPENDING` </li>
 Executes an `ALTER USER` command to change the password<br>
 to the new password.<br>
 
+##### Change the code below to use the <pre> tag and add the full code #####
 ```cursor.execute(f"ALTER USER '{username}'@'%' IDENTIFIED BY '{new_password}';")``` <br>
 </li>
 <li>Then commits the change and closes the connection</li>
@@ -944,7 +943,112 @@ State Management Modernization: > This project leverages Native S3 State Locking
 </p>
 
 <h2>IAM Roles</h2>
--> Roles
+<h3>Lambda secrets rotation role `lambda_secrets_role`</h3>
+
+<p>
+The role is an aggregation of permissions that allow the function to communicate with AWS services for<br>
+the successfull execution of secrets rotation. The lambda function assumes the role when it is invoked by<br>
+Secrets Manager.<br>
+
+<pre>
+<code>
+resource "aws_iam_role" "lambda_secrets_role" {
+  name = "lambda_secrets_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+      Effect = "Allow"
+      Sid    = ""
+    }]
+  })
+
+  tags = merge(local.common_tags, {
+    Name = "lambda_secrets_role"
+  })
+}
+</code>
+</pre>
+
+Following the principle of least privileges, the following permissions are attached to the role:<br>
+
+<ul>
+<li>
+`lambda_vpc_access`: This policy attachment pulls in an AWS managed policy `AWSLambdaVPCAccessExecutionRole`<br>
+
+<pre>
+<code>
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+</code>
+</pre>
+
+which facilitates a number of actions required for the lambda function:<br>
+<ol>
+
+<li>
+`ec2:CreateNetworkInterface`: Allows the lambda function to create <b>Elastic Network Interfaces(ENI)</b><br>
+inside the private subnets. This is how it is able to find and communicate with the database i.e. it gives<br>
+the lambda function footing in the database subnets. Note the lambda function can reside in another subnet<br> that has access to the database subnets.
+</li>
+
+<li>
+<b>View Network Topology</b>: a combination of these actions; `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`,`ec2:DescribeSecurityGroups`, allow the lambda function to look around the network <br>
+essentially finding it's path to the database.
+</li>
+
+<li>
+`ec2:DeleteNetworkInterface`: Because lambda functions are ephemeral, when it has completed the rotation tasks <br> it needs to delete the <b>ENIs</b> that were created to eliminate left over/orphaned resources costs.
+
+</li>
+
+</ol>
+</li>
+
+<li>
+  `lambda_basic_execution`: This policy attachment allows the Lambda function to <b>tell its story</b>. 
+  It pulls in the AWS managed policy <code>AWSLambdaBasicExecutionRole</code>:
+  <pre><code>
+    policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  </code></pre>
+  This facilitates the communication between the Lambda and <b>AWS CloudWatch</b> via the following actions:
+
+  <ol>
+    <li>
+      <strong><code>logs:CreateLogGroup</code></strong>: On the very first run, this allows the Lambda to create a "folder" in CloudWatch (the <b>Log Group</b>). This is the dedicated space where all future logs for this function will live.
+    </li>
+    <li>
+      <strong><code>logs:CreateLogStream</code></strong>: This allows the Lambda to create individual "files" (<b>Log Streams</b>) for every separate execution. This is good housekeeping; it ensures that logs from different rotation attempts don't get jumbled together, making debugging much easier.
+    </li>
+    <li>
+      <strong><code>logs:PutLogEvents</code></strong>: This is the action that actually "writes" to the file. It allows the <code>logger.info()</code> and <code>logger.error()</code> messages from the Python script to be posted into CloudWatch so you can actually read the "emergency alarm" if something goes wrong.
+    </li>
+  </ol>
+</li>
+
+<li>
+##### START HERE: (rr_lambda_secrets_custom_policy) summary ######
+
+
+</li>
+
+<li></li>
+<li></li>
+<li></li>
+</ul>
+</p>
+
+
+
+<h3>EC2 access to S3 and secrets role `rr_ec2_s3_secret_role`</h3>
+
+<p>
+
+</p>
+
+
 
 <h2>Lambda Function</h2>
 
