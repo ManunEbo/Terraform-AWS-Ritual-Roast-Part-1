@@ -1029,18 +1029,43 @@ essentially finding it's path to the database.
 </li>
 
 <li>
-##### START HERE: (rr_lambda_secrets_custom_policy) summary ######
+<strong><code>rr_lambda_secrets_custom_policy</code></strong>: This is a surgical, "Least Privilege" userdefined  policy that gives the Lambda function the exact tools it needs to rotate credentials without exposing the rest of the AWS account. These tools are the actions that can be performed on restricted secrets resources that match this prefix `secret:rr-db-secret-*` in the name.
+<pre> 
+<code>
+        Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
+</code>
+</pre>
 
+The actions include:
+<ul>
+<li>`secretsmanager:GetSecretValue`: Retrieves the current "locked" credentials.</li>
+<li>`secretsmanager:DescribeSecret`: Obtains metadata (e.g., rotation status) to ensure the logic is in sync.</li>
+<li>`secretsmanager:PutSecretValue`: Allows lambda to create a new secret/password</li>
+<li>`secretsmanager:UpdateSecret`: Allows lambda to update the secret value</li>
+</ul>
 
+The policy also permits the role to send metrics to AWS CloudWatch. Note, this is for numerical data that is used
+in Dashboards and graphs. This is accomplished using the following action:
+<ul>
+<li>`cloudwatch:PutMetricData`: Allows lambda to write numerical data to CloudWatch Metrics</li>
+</ul>
 </li>
-
-<li></li>
-<li></li>
-<li></li>
 </ul>
 </p>
 
-
+<p>
+In additions to the role policies, we have a resource based policy <strong><code>aws_lambda_permission</code></strong> that is attached directly to the lambda function. This permission tells the lambda who can communicate with it i.e. this is what enables Secrets Manager to invoke the lambda function.
+<pre>
+<code>
+resource "aws_lambda_permission" "rr_allow_secretsmanager_to_call_lambda" {
+  statement_id  = "AllowExecutionFromSecretsManager"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.secret_rotation_function.function_name
+  principal     = "secretsmanager.amazonaws.com"
+}
+</code>
+</pre>
+</p>
 
 <h3>EC2 access to S3 and secrets role `rr_ec2_s3_secret_role`</h3>
 
@@ -1053,6 +1078,7 @@ essentially finding it's path to the database.
 <h2>Lambda Function</h2>
 
 -> Lambda function
+-> Resource based policy that enables Secrets Manager to call the lambda function.
 
 -> Secret manager / Chicken and egg problem
 

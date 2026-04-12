@@ -54,18 +54,8 @@ resource "aws_iam_policy" "rr_lambda_secrets_custom_policy" {
         # Preventing the hardcoding of the account id
         Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
       },
-      # {
-      #   Effect = "Allow"
-      #   Action = [
-      #     "s3:GetObject",
-      #     "s3:ListBucket"
-      #   ]
-      #   Resource = [
-      #     data.aws_s3_bucket.RR-bucket.arn,
-      #     "${data.aws_s3_bucket.RR-bucket.arn}/*"
-      #   ]
-      # },
       {
+        # Allow lambda to write metrics to CloudWatch Metrics
         Effect = "Allow"
         Action = [
           "cloudwatch:PutMetricData"
@@ -85,6 +75,7 @@ resource "aws_iam_role_policy_attachment" "rr_custom_policy_attach" {
 
 # 6. CRITICAL: Lambda Resource-Based Policy
 # This solves the "AccessDeniedException: Secrets Manager cannot invoke..." error.
+# i.e. this allows Secrets Manager to invoke the lambda function
 resource "aws_lambda_permission" "rr_allow_secretsmanager_to_call_lambda" {
   statement_id  = "AllowExecutionFromSecretsManager"
   action        = "lambda:InvokeFunction"
