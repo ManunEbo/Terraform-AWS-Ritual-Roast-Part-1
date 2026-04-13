@@ -1,5 +1,5 @@
 <h1>Ritual Roast: Automated 3-Tier AWS Architecture</h1>
-<h3>1. 🏞️ Background</h3>
+<h2>1. 🏞️ Background</h2>
 <p>
 Ritual Roast is a fictitious company embarking on an advertising campaign to engage with their customers<br>
 by hosting a recipe competition where customers complete the online form with their recipe and contact details.<br>
@@ -7,7 +7,7 @@ The chefs will try the recipe and decide the winner to receive a prize.<br>
 The company aims to build a mailing list from the emails for future campaigns.
 </p>
 
-<h3>2.💡 Project Evolution & Motivation</h3>
+<h2>2.💡 Project Evolution & Motivation</h2>
 <p>
 The project is based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
 The original course consists of manual infrastructure deployment via the AWS Management Console.<br>
@@ -15,7 +15,7 @@ This project converts that into a sophisticated Infrastructure as code (IAC) dep
 In implementing this project I demonstrate my skills and ability to turn complex architectures<br>
 into practical production worthy solutions.
 
-<h3>3. 🗺️ High-Level Design (HLD)</h3>
+<h2>3. 🗺️ High-Level Design (HLD)</h2>
 <p>
 The diagram below is the schematics for Ritual Roast, provided in the course.<br>
 This along with the "Ritual Roast Resource Configuration.pdf" document provide the road map<br> for this Terraform implementation. I've also included the python script "ritual-roast.py" script, for completeness.
@@ -36,7 +36,7 @@ The Data tier is home to the RDS MySQL database with Multi-AZ failover. The data
 There is a separate role to enable communication between the EC2 instances, the application, and the database.
 </p>
 
-<h3>4. 🌐 Networking</h3>
+<h2>4. 🌐 Networking</h2>
 
 <p>
 This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" <br>all the resources used in this project are deployed under the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>.<br>
@@ -47,7 +47,7 @@ The configuration specification for this project can be found at <a href="./docu
  and availability zones for each Tier, in additions to other resource parameter settings.<br>
 
 
-<h3>5. 🔒 Security</h3>
+<h2>5. 🔒 Security</h2>
 <p>
 <b>Summary</b>: The security groups apply the principle of least privilege. They tightly restrict traffic<br>
 (e.g., the DB only talks to the Web tier and Lambda secrets rotation function).<br>
@@ -57,28 +57,33 @@ EC2 instances sit in private subnets, only accessible via the ALB or Systems Man
 Since all subnets are by default associated to the VPC default route table, to prevent exposing private resources <br>to the internet, a single route is created via NAT gateways placed in a public subnet that has an internet gateway(IGW) attached.<br>This essentially gives private resources an egress only communication with the outside.
 </p>
 
-```
+<code>
+<pre>
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.rr_nat_gateway.id
   }
-```
+</code>
+</pre>
 
 <p>
 A separate route table is created for public resources to access the internet via the IGW.
 </p>
 
-```
+<code>
+<pre>
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.ritual-roast-igw.id
   }
-```
-<strong>Security Groups</strong>
+</code>
+</pre>
+
+<h2>Security Groups</h2>
 
 <ul>Security groups restricts ingress and egress communication between resources using rules.
 <li>
-<b>LoadBalancer-SG</b><br>
+<h3>LoadBalancer-SG</h3>
 <ol>
 <li>ingress rule that accepts traffic from the internet on port 80</li>
 <li>egress rule allowing traffic to the application tier<br> i.e. any resource attached to Web-App-SG security group</li>
@@ -87,7 +92,7 @@ A separate route table is created for public resources to access the internet vi
 </li>
 
 <li>
-<b>Web-App-SG</b>
+<h3>Web-App-SG</h3>
 <ol>
 <li>ingress rule that accepts traffic from <br>LoadBalancer-SG on port 5000</li>
 <li>egress rule that allows communication to any protocol to any ip</li>
@@ -100,7 +105,7 @@ without explicitly defining an egress rule for that</li>
 </li>
 
 <li>
-<b>Database-SG</b>
+<h3>Database-SG</h3>
 <ol>
 <li>ingress rule accepting traffic on port 3306 from Web-App-SG</li>
 <li>ingress rule accepting traffic on port 3306 from Lambda-SG</li>
@@ -110,7 +115,7 @@ so no need for egress rules.</li>
 </li>
 
 <li>
-<b>Lambda-SG</b>
+<h3>Lambda-SG</h3>
 <ol>
 <li>ingress rule accepting traffic from Database-SG on port 3306</li>
 <li>egress rule allowing tcp traffic to any destination on port 443.<br>
@@ -124,7 +129,8 @@ the internet via the NAT gateway it cannot be reached from the outside.
 
 </ul>
 
-<b>Secrets Manager</b>
+<h3>Secrets Manager</h3>
+<p>
 Secrets Manager is preferred over other methods credential management<br>
 for the following reasons:
 <ul>
@@ -147,9 +153,10 @@ drastically narrows the window of opportunity for an attacker to use a leaked ke
 Provides an audit trail via its native integration with AWS CloudTrail
 </li>
 </ul>
+</p>
 
-
-<b>Session Manager</b><br>
+<h3>Session Manager</h3>
+<p>
 Session manager is preferred over SSH for the following reasons:
 
 <ul>
@@ -229,7 +236,7 @@ for authentication</li>
 </li>
 
 </ul>
-
+</p>
 
 <h1>6. 🚀 Technical Highlights</h1>
 
@@ -364,7 +371,13 @@ enables Linux to restart the service if it crashes.
 <li>
 Using the <b>exec</b> command captures the entire scripts output<br>
 like a blackbox flight recorder<br>
-<code>exec > /var/log/user-data.log 2>&1</code><br>
+
+<pre>
+<code>
+  exec > /var/log/user-data.log 2>&1
+</code>
+</pre>
+
 not just the output of running the python script, as in the original.
 </li>
 <li>
@@ -451,22 +464,25 @@ using the latest launch template version:
 <br>
 </p>
 
-```
-${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}
+<code>
+<pre>
+  ${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}
 
-name = "rr-asg-${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}"
-```
+  name = "rr-asg-${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}"
+</code>
+</pre>
 <p>
 This is a strategy called "Immutable Infrastructure" i.e. replacing resources entirely instead<br>
 of modifying them in place.
 
 Now when we run:
+<code>
+<pre>
+  tf apply -auto-approve
+</code>
+</pre>
+
 </p>
-
-```
-$ tf apply -auto-approve
-```
-
 <p>
 The following happens:
 
@@ -502,7 +518,8 @@ Setting the target tracking to 50.0 is the middle ground, perhaps not optimal.<b
 However, for the purpose of this demonstration, it is satisfactory.<br>
 </p>
 
-```
+<code>
+<pre>
   target_tracking_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ASGAverageCPUUtilization"
@@ -511,7 +528,9 @@ However, for the purpose of this demonstration, it is satisfactory.<br>
 
     disable_scale_in = false
   }
-```
+</code>
+</pre>
+
 <p>
 When traffic increases, the following happen:<br>
 
@@ -584,12 +603,14 @@ significantly such as containerization with ECS or Fargate. This will drop the w
 
 <h3>Including a "depends_on" parameter:</h3>
 
-```
+<code>
+<pre>
   depends_on = [
     aws_secretsmanager_secret_version.db_host_update,
     aws_db_instance.ritual_roast_db
   ]
-```
+</code>
+</pre>
 
 <p>
 specifies the order in which resources will be created. 
@@ -599,9 +620,13 @@ specifies the order in which resources will be created.
 <li>
 Once the database is created, the secret storing database credentials is updated<br>
 with the database host information<br>
+
+<pre>
 <code>
-<b>"host     = aws_db_instance.ritual_roast_db.address"</b>
+  "host     = aws_db_instance.ritual_roast_db.address"
 </code>
+</pre>
+
 </li>
 <li>The ASG then launches instances that use the host information<br>
 to connect to the database
@@ -661,11 +686,14 @@ All instances created by the ASG will pull code from this bucket. This means all
 To refresh the instances so they have the latest updates we can run the following on aws cli:
 </p>
 
-```
-aws autoscaling start-instance-refresh \
-    --auto-scaling-group-name rr_autoscaling_group \
-    --preferences '{"MinHealthyPercentage": 50}'
-```
+<code>
+<pre>
+  aws autoscaling start-instance-refresh \
+      --auto-scaling-group-name rr_autoscaling_group \
+      --preferences '{"MinHealthyPercentage": 50}'
+</code>
+</pre>
+
 <p>
 The aws cli is used above instead of Terraform because no changes have been made to the ASG or Launch template<br>
 meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy<br>
@@ -809,26 +837,36 @@ already exists.
 `set_secret`: This function is the only point of contact with the database.<br>
 It performs the following tasks:<br>
 <ol>
-<li>Retrives both the current password `AWSCURRENT`<br>
+<li>Retrieves both the current password `AWSCURRENT`<br>
 and the new password `AWSPENDING` </li>
 <li>Connects to the database using the current password</li>
 <li>
 Executes an `ALTER USER` command to change the password<br>
 to the new password.<br>
 
-##### Change the code below to use the <pre> tag and add the full code #####
-```cursor.execute(f"ALTER USER '{username}'@'%' IDENTIFIED BY '{new_password}';")``` <br>
+<pre>
+<code>
+  with conn.cursor() as cursor:
+      # Execute SQL to change the password inside the database engine
+      cursor.execute(f"ALTER USER '{username}'@'%' IDENTIFIED BY '{new_password}';")
+  conn.commit()
+  conn.close()
+</code>
+</pre>
+
 </li>
 <li>Then commits the change and closes the connection</li>
 <li>
 If something goes wrong, the error is handled with the exception<br>
 which logs the error.<br>
 
-```
+<pre>
+<code>
  except Exception as e:
         logger.error(f"Failed to update database password: {e}")
         raise 
-```
+</code>
+</pre>
 
 </li>
 
@@ -1070,6 +1108,86 @@ resource "aws_lambda_permission" "rr_allow_secretsmanager_to_call_lambda" {
 <h3>EC2 access to S3 and secrets role `rr_ec2_s3_secret_role`</h3>
 
 <p>
+This role enables the EC2 instances created by the ASG to securely perform the following tasks:
+
+<ol>
+<li>Communicate with S3 to pull assets and configurations. Note this policy specifies explicitly which bucket this applies to
+<pre><code>
+        Resource = [
+          "${data.aws_s3_bucket.RR-bucket.arn}",
+          "${data.aws_s3_bucket.RR-bucket.arn}/*"
+        ]
+</code></pre>
+</li>
+<li>Communicate with Secrets Manager to retrieve database credentials. Note, it's also explicitly specified which secret this applies to:
+<pre><code>
+        Resource = "${aws_secretsmanager_secret.db_secret.arn}"
+</code></pre>
+
+Using the resource ARN makes the secret retrieval flexible to changes in secrets version as the secrets rotate
+i.e. instead of being locked into one version, which would break the application, the application automatically consumes the latest version.
+</li>
+<li>Communicate with AWS Systems Manager (SSM)</li>
+</ol>
+
+The communication with S3 and Secrets Manager are enabled by the `rr_ec2_s3_secret_policy` policy actions.
+Here is a breakdown of these actions:
+<ol>
+
+<li>
+`s3:GetObject`: Allow instances to retrieve objects from S3.
+</li>
+
+<li>
+`s3:ListBucket`: Allows the instances to see the contents of the S3 bucket.
+</li>
+
+<li>
+`secretsmanager:GetSecretValue`: Allows the instances to retrieve the secrets value i.e. the DB credentials
+from Secrets Manager.
+</li>
+</ol>
+
+The communication with <b>SSM</b> is enabled by attaching `AmazonSSMManagedInstanceCore` policy to the role.
+This essentially achieves the following:
+<ol>
+<li>
+Enable remote access to private instances without using SSH i.e. the instances no longer need to be publicly accessible
+</li>
+
+<li>
+Thus no need for port 22 i.e. since the SSM agent initiates a secure outbound connection to AWS, the instance remains unreachable from the public internet, drastically reducing the attack surface.
+</li>
+
+<li>
+No need for Bastion hosts to play the middle man facilitating access to private subnets i.e. now we have secure direct access to the private instances.
+</li>
+
+<li>
+Audit Trail: Every command typed in an SSM session can be logged to CloudWatch or S3. Standard SSH doesn't have this kind of monitoring visibility.
+</li>
+</ol>
+
+Note In AWS, <strong>you cannot attach an IAM Role directly to an EC2 instance. You must attach an Instance Profile to the instance, and that profile carries the Role</strong>. By using an Instance Profile, we eliminate the need for long-lived, static "Access Keys" stored on the server. Instead, the instance utilizes temporary, rotating credentials provided by the Instance Metadata Service (IMDS).
+
+<pre>
+<code>
+resource "aws_iam_instance_profile" "rr_instance_profile" {
+  name = "rr-instance-profile"
+  role = aws_iam_role.rr_ec2_s3_secret_role.name # Links to your existing role
+}
+</code>
+</pre>
+
+By linking this profile to the Auto Scaling Group's Launch Template, every new instance created during a scale-out event is automatically "born" with the correct identity and permissions, requiring zero manual configuration.
+
+<pre>
+<code>
+  iam_instance_profile {
+    name = aws_iam_instance_profile.rr_instance_profile.name
+  }
+</code>
+</pre>
 
 </p>
 
@@ -1077,54 +1195,238 @@ resource "aws_lambda_permission" "rr_allow_secretsmanager_to_call_lambda" {
 
 <h2>Lambda Function</h2>
 
--> Lambda function
--> Resource based policy that enables Secrets Manager to call the lambda function.
+<p>
+This lambda function `secret_rotation_function` executes the python code `index.py` to perform the necessary tasks for rotation. The following components ensure that the function is both secure and robust for the job at hand.
+<ol>
+<li><strong>Private subnets</strong>: 
+Placing this Lambda inside the database_subnets ensures that the traffic between the Lambda and the Database never touches the public internet. It’s a private-to-private handshake.
+<pre>
+<code>
+    subnet_ids = [
+      aws_subnet.database_subnets[0].id,
+      aws_subnet.database_subnets[1].id,
+      aws_subnet.database_subnets[2].id
+    ]
+</code>
+</pre>
 
--> Secret manager / Chicken and egg problem
+</li>
 
--> RDS
-    -> Multi-AZ failover
-
-
-
-
-
-
-
-<h3>7. 🛠️ Tech Stack</h3>
-
-Make a table of this:
-
-| Category | Tools |
-| :--- | :--- |
-| **Cloud Provider** | AWS (EC2, RDS, ALB, ASG, Lambda, Secrets Manager, S3) |
-| **IaC** | Terraform (v1.7+) |
-| **Language** | Python 3.9 (Flask Framework) |
-| **Database** | MySQL 8.x |
-| **OS** | Amazon Linux 2023 
-
-
-
-
+<li>
+<strong>source_code_hash</strong>: 
+using filebase64sha256 creates a unique digital signature of the file ensuring that Terraform is notified when the underlying Python code has changed i.e. any change to the file causes the sha256 of the file to change. 
+<pre>
+<code>
+  source_code_hash = filebase64sha256("./index.zip")
+</code>
+</pre>
+Without this, applying any code update with `terraform apply` would do nothing. This is because terraform looks at the name index.zip and if the file name is still the same, it assumes no change.
+</li>
 
 
+<li>
+`depends_on` Orchestration logic:
+VPC-based Lambdas require specific permissions to create Elastic Network Interfaces (ENIs) during initialization. Because AWS IAM is eventually consistent, a Lambda might attempt to boot before its permissions have fully propagated.
+<pre>
+<code>
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_vpc_access
+  ]
+</code>
+</pre>
+depends_on acts as a sequencing gate, forcing Terraform to wait until the VPC permissions are fully attached and active before attempting to initialize the Lambda function.
+</li>
 
-<h3>8. 📖 Deployment Instructions</h3>
 
+<li>
+<b>Dedicated Networking</b> (`Lambda-SG`): The function is assigned a dedicated Security Group, allowing for granular control over outbound traffic to the RDS instance while maintaining strict isolation from the application-tier EC2s
+<pre>
+<code>
+    security_group_ids = [aws_security_group.Lambda-SG.id]
+</code>
+</pre>
+</li>
+</ol>
+</p>
 
+<h2>Secrets Manager: Chicken and Egg Problem</h2>
 
+<p><strong>The Problem: The Circular Dependency</strong>
+The database has the following credentials requirement to boot up:
+<ul>
+<li>Database Username</li>
+<li>Database Password</li>
+</ul>
 
+Since the secret holds the database credentials required for the EC2 instances to connect to the database, it has the following credentials requirements:
+<ul>
+<li>Database Username</li>
+<li>Database Password</li>
+<li>dbname</li>
+<li>port</li>
+<li>host</li>
+</ul>
 
+The `host` value is only known when the database has booted. Thus attempting to create the secret without it will fail with a circular dependency error. Since the database needs the secret prior booting, this results in a conflict of interests.
+<strong>We can't have the Host Address until the RDS is created, but we can't (ideally) create a fully functional Secret until we have the Host Address.</strong>
 
+Three steps were employed to resolve the conflict:
+<ol>
 
+<li>
+Initialize the secret with a placeholder for `host` value. This is the skeleton version of the secret:
+<pre>
+<code>
+resource "aws_secretsmanager_secret_version" "db_secret_version" {
+  secret_id = aws_secretsmanager_secret.db_secret.id
+  secret_string = jsonencode({
+    username = var.db_username
+    password = var.db_password
+    host     = "placeholder"
+    port     = 3306
+    dbname   = "ritual_roast"
+  })
+}
+</code>
+</pre>
+Once the skeleton version is created to ensure the infrastructure remains "rotation-aware," we utilize a data source to track the AWSCURRENT version of the secret.
+<pre>
+<code>
+data "aws_secretsmanager_secret_version" "latest_credentials" {
+  secret_id = aws_secretsmanager_secret.db_secret.id
+  depends_on = [aws_secretsmanager_secret_version.db_secret_version]
+}
+</code>
+</pre>
+By placing this data source immediately after the initial "Skeleton" version, we ensure that Terraform can resolve the secret's metadata without waiting for the entire RDS provisioning process (which can take 10-15 minutes).
+</li>
+
+<li>
+Now that the database requirements are met, it can start up successfully.
+Once the RDS instance is "Available," a second `aws_secretsmanager_secret_version` resource (using a `depends_on` constraint) injects the real Database Host Address into the secret.
+<pre>
+<code>
+resource "aws_secretsmanager_secret_version" "db_host_update" {
+  secret_id = aws_secretsmanager_secret.db_secret.id
+  secret_string = jsonencode({
+    username = var.db_username
+    password = var.db_password
+    dbname   = "ritual_roast"
+    port     = 3306
+    host     = aws_db_instance.ritual_roast_db.address
+  })
+
+  depends_on = [aws_db_instance.ritual_roast_db]
+
+  lifecycle {
+    ignore_changes = [ secret_string ]
+  }
+}
+</code>
+</pre>
+</li>
+
+<li>
+<strong>Automating rotation with `lifecyle` block</strong>: To prevent Terraform from interfering with future password rotations, we implemented a `lifecycle { ignore_changes }` block. This ensures that once the Rotation Lambda takes over management of the credentials, Terraform will not attempt to revert the password to its initial state during subsequent infrastructure updates.
+
+This also prevents application downtime i.e. without the above, if Terraform resets the password to the one in the variables.tf, but the Database is already using the rotated password from the Lambda, the app crashes instantly.
+</li>
+</ol>
+</p>
+
+<h2>RDS</h2>
+<p>
+The database layer is engineered for resilience and strict network isolation, serving as the "Source of Truth" for the Ritual Roast application.
+The following factors are key components of the database layer:
+
+<ol>
+<li>
+<b>Dedicated Subnet Group</b>: The RDS instance is confined to a private db_subnet_group spanning three Availability Zones. 
+<pre>
+<code>
+resource "aws_db_subnet_group" "rr_db_subnet_group" {
+  name = "rr-db-subnet-group"
+  subnet_ids = [
+    aws_subnet.database_subnets[0].id,
+    aws_subnet.database_subnets[1].id,
+    aws_subnet.database_subnets[2].id
+  ]
+}
+</code>
+</pre>
+
+This ensures the database is unreachable from the public internet and is only accessible via the application-tier Security Group `Web-App-SG` and the lambda security group `Lambda-SG`.
+</li>
+
+<li><strong>Resilience & Performance</strong>:
+<ul>
+
+<li>
+<strong>Multi-AZ Deployment:</strong>: `multi_az` is enabled to ensure high availability. AWS automatically provisions and maintains a synchronous standby replica in a different Availability Zone, providing automatic failover in the event of an infrastructure failure.
+</li>
+
+<li>
+<strong>Modern Storage (`gp3`)</strong>: General Purpose SSD (gp3) storage allows for independent scaling of IOPS and throughput, providing a more predictable and cost-effective performance profile than older storage types.
+</li>
+</ul>
+</li>
+
+<li>
+<strong>Automated Credential Management</strong>: 
+<ul>
+<li>
+<strong>Late-Binding Credentials</strong>: The database is initialized using credentials dynamically retrieved from the Secrets Manager "Skeleton" version. This ensures that the DB is never provisioned with hard-coded passwords.
+</li>
+
+<li>
+<strong>Rotation-Safe Lifecycle</strong>: To support automated password rotation, we implemented a `lifecycle { ignore_changes = [password] }` block. This allows the Secret Rotation Lambda to manage the database password independently of the Terraform state, preventing accidental credential reverts during future infrastructure updates.
+</li>
+</ul>
+</li>
+
+</ol>
+
+</p>
+
+<h1>7. 🛠️ Tech Stack</h1>
+
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Tools</th>
+  </tr>
+  <tr>
+    <td>Cloud Provider</td>
+    <td>AWS (EC2, RDS, ALB, ASG, Lambda, Secrets Manager, S3)</td>
+  </tr>
+  
+  <tr>
+    <td>IaC</td>
+    <td>Terraform (v1.14.3)</td>
+  </tr>
+  
+  <tr>
+    <td>Language</td>
+    <td>Python 3.9 (Flask Framework)</td>
+  </tr>
+
+  <tr>
+    <td>Database</td>
+    <td>MySQL 8.x</td>
+  </tr>
+
+  <tr>
+    <td>OS</td>
+    <td>Amazon Linux 2023</td>
+  </tr>
+  
+</table>
 
 
 <h3>9. 🛡️ Disclaimer</h3>
 
 <p>
-*The application logic and frontend design are inspired by
- the Ritual Roast project in the Udemy course mentioned above.
- All infrastructure code, automation scripts,
- and secret rotation logic were independently developed by me
- with the help of Gemini 3
+*The application logic and frontend design are inspired by the Ritual Roast project in the Udemy course mentioned above.
+
+All infrastructure code, automation scripts, and secret rotation logic were independently developed by me with the help of Gemini 3.
 </p>
