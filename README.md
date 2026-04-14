@@ -591,7 +591,6 @@ any requests it is currently processing before termination.
 <li>When the draining is complete the ASG terminates the instance<br>
 
 </li>
-<li></li>
 </ol>
 <br>
 Although this makes the infrastructure dynamic and flexible to handle demand more effectively<br>
@@ -762,7 +761,7 @@ Finally, the `__main__` block acts as a startup gatekeeper. It forces the app to
 </ol>
 </p>
 
-<h3>Terraform backend</h3>
+<h3>Terraform remote backend</h3>
 <p>
 The terraform state file `tf.state` is essentially a copy of the current configuration of our resources managed by this terraform project. The state file should be stored remotely to facilitate collaboration. The remote location(backend) should be secure and encrypted yet accessible to all collaborators with the right security credentials.
 In this project an S3 bucket is used as the remote backend.
@@ -982,14 +981,6 @@ once again terminating the execution and reporting the failure to CloudWatch.
 
 </ol>
 
-</p>
-
-
-<h3>Terraform remote backend</h3>
-    -> Remote backend and state file and state lock
-
-<p>
-State Management Modernization: > This project leverages Native S3 State Locking (introduced in Terraform 1.10+). By setting use_lockfile = true, we eliminate the need for a separate DynamoDB table, reducing architectural complexity and cost while maintaining full protection against concurrent state modifications.
 </p>
 
 <h2>IAM Roles</h2>
