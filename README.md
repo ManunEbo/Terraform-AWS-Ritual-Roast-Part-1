@@ -8,13 +8,13 @@ The chefs will try the recipe and decide the winner to receive a prize. The comp
 <h1>2.💡 Project Evolution & Motivation</h1>
 <p>
 This is the first of a three part series of projects based on Ritual Roast. The projects are based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
-The original course consists of manual infrastructure deployments via the AWS Management Console. These projects convert that into a sophisticated Infrastructure as code (IAC) deployment using <strong>Terraform</strong>. In implementing this project I demonstrate my skills and ability to turn complex architectures into practical production worthy solutions.
+The original course consists of manual infrastructure deployments via the AWS Management Console. These projects convert that into a sophisticated Infrastructure as code (IaC) deployment using <strong>Terraform</strong>. In implementing this project I demonstrate my skills and ability to turn complex architectures into practical production worthy solutions.
 
-This document is intended to be both technical and education to bridge the gap for those new to IaC.
+This document is intended to be both technical and educational to bridge the gap for those new to IaC.
 
 <h1>3. 🗺️ High-Level Design (HLD)</h1>
 <p>
-The diagram below is the schematics for Ritual Roast, provided in the course. This along with the "Ritual Roast Resource Configuration.pdf" document provide the road map for this Terraform implementation. I've also included the python script "ritual-roast.py" script, for completeness.
+The diagram below is the schematics for Ritual Roast, provided in the course. This along with the <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/Ritual%20Roast%20Resource%20Configuration.pdf">Ritual Roast Resource Configuration</a> document provide the road map for this Terraform implementation. I've also included the python script <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/ritual-roast.py">ritual-roast.py</a> script, for completeness.
 </p>
 <img src="images/RR-HLD Architecture.png" alt="Architecture diagram provided by the IaaS Academy Udemy Course.">
 
