@@ -17,3 +17,6 @@ zip -r ../index.zip .
 
 # To clean up the source code directory after run
 # rm -rf pymysql/ PyMySQL-*.dist-info/
+
+# To remove the directory the brute force way
+# rm -rf ./my_rotation_dependencies

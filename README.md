@@ -1,64 +1,46 @@
 <h1>Ritual Roast: Automated 3-Tier AWS Architecture</h1>
 <h1>1. 🏞️ Background</h1>
 <p>
-Ritual Roast is a fictitious company embarking on an advertising campaign to engage with their customers<br>
-by hosting a recipe competition where customers complete the online form with their recipe and contact details.<br>
-The chefs will try the recipe and decide the winner to receive a prize.<br>
-The company aims to build a mailing list from the emails for future campaigns.
+Ritual Roast is a fictitious company embarking on an advertising campaign to engage with their customers by hosting a recipe competition where customers complete the online form with their recipe and contact details.
+The chefs will try the recipe and decide the winner to receive a prize. The company aims to build a mailing list from the emails for future campaigns.
 </p>
 
 <h1>2.💡 Project Evolution & Motivation</h1>
 <p>
-The project is based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
-The original course consists of manual infrastructure deployment via the AWS Management Console.<br>
-This project converts that into a sophisticated Infrastructure as code (IAC) deployment using <strong>Terraform</strong>. 
-In implementing this project I demonstrate my skills and ability to turn complex architectures<br>
-into practical production worthy solutions.
+This is the first of a three part series of projects based on Ritual Roast. The projects are based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
+The original course consists of manual infrastructure deployments via the AWS Management Console. These projects convert that into a sophisticated Infrastructure as code (IAC) deployment using <strong>Terraform</strong>. In implementing this project I demonstrate my skills and ability to turn complex architectures into practical production worthy solutions.
+
+This document is intended to be both technical and education to bridge the gap for those new to IaC.
 
 <h1>3. 🗺️ High-Level Design (HLD)</h1>
 <p>
-The diagram below is the schematics for Ritual Roast, provided in the course.<br>
-This along with the "Ritual Roast Resource Configuration.pdf" document provide the road map<br> for this Terraform implementation. I've also included the python script "ritual-roast.py" script, for completeness.
+The diagram below is the schematics for Ritual Roast, provided in the course. This along with the "Ritual Roast Resource Configuration.pdf" document provide the road map for this Terraform implementation. I've also included the python script "ritual-roast.py" script, for completeness.
 </p>
 <img src="images/RR-HLD Architecture.png" alt="Architecture diagram provided by the IaaS Academy Udemy Course.">
 
 <p>
-The HLD illustrates the 3-Tier Architecture with the <b>DMZ</b> presentation Tier, <b>Web/App</b> Application Tier<br> and <b>Data</b> the Data Tier.<br>
-The presentation Tier consists of a LoadBalancer that accept traffic from the internet and Loadbalances it to<br>
-the Aplication Tier's Auto Scaling Group(ASG), highly available and resilient, EC2 instances in the Web/App<br> private subnets. The instances pull source codes from an S3 to build the application.
-<br>The application processes packets and communicates to and fro with the Data tier.<br>
+The HLD illustrates the 3-Tier Architecture with the <b>DMZ</b> presentation Tier, <b>Web/App</b> Application Tier and <b>Data</b> the Data Tier. The presentation Tier consists of a LoadBalancer that accept traffic from the internet and Loadbalances it to the Aplication Tier's Auto Scaling Group(ASG), highly available and resilient, EC2 instances in the Web/App private subnets. The instances pull source codes from an S3 to build the application.
+<br>The application processes packets and communicates to and fro with the Data tier.
 
-Communication between resources is enabled via security groups i.e. only resources with the right<br>
-security group attached can communicate vice versa.<br>
-Security is further enhanced by preventing exposure to the internet for resources in private subnets.<br>
-
-The Data tier is home to the RDS MySQL database with Multi-AZ failover. The database credentials are stored<br> and rotated by Secrets Manager with the help of a lambda function which has a role to facilitate communication.<br>
+Communication between resources is enabled via security groups i.e. only resources with the right security group attached can communicate vice versa. Security is further enhanced by preventing exposure to the internet for resources in private subnets. The Data tier is home to the RDS MySQL database with Multi-AZ failover. The database credentials are stored and rotated by Secrets Manager with the help of a lambda function which has a role to facilitate communication.
 There is a separate role to enable communication between the EC2 instances, the application, and the database.
 </p>
 
 <h1>4. 🌐 Networking</h1>
 
 <p>
-This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" <br>all the resources used in this project are deployed under the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>.<br>
-Note, S3 buckets are global and unique.<br>
-The configuration specification for this project can be found at <a href="./documents/Ritual Roast Resource Specs.pdf">Ritual Roast Resource Configuration</a>. A summary of this is presented under section<br>
- "6. Technical highlights". It sets out what values to use for each resource, where possible,<br>
- such as the VPC CIDR range <b>10.16.0.0/16</b> hence all the subnet CIDR blocks, subnet names<br>
- and availability zones for each Tier, in additions to other resource parameter settings.<br>
+This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" all the resources used in this project are deployed under the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>. Note, S3 buckets are global and unique. The configuration specification for this project can be found at <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/Ritual%20Roast%20Resource%20Configuration.pdf">Ritual Roast Resource Configuration</a>. A summary of this is presented under section  "6. Technical highlights". It sets out what values to use for each resource, where possible, such as the VPC CIDR range <b>10.16.0.0/16</b> hence all the subnet CIDR blocks, subnet names and availability zones for each Tier, in additions to other resource parameter settings.
 
 
 <h1>5. 🔒 Security</h1>
 <p>
-<b>Summary</b>: The security groups apply the principle of least privilege. They tightly restrict traffic<br>
-(e.g., the DB only talks to the Web tier and Lambda secrets rotation function).<br>
-EC2 instances sit in private subnets, only accessible via the ALB or Systems Manager<br>
-(via the attached SSM IAM policy).<br>
+<b>Summary</b>: The security groups apply the principle of least privilege. They tightly restrict traffic (e.g., the DB only talks to the Web tier and Lambda secrets rotation function). EC2 instances sit in private subnets, only accessible via the ALB or Systems Manager (via the attached SSM IAM policy).
 
-Since all subnets are by default associated to the VPC default route table, to prevent exposing private resources <br>to the internet, a single route is created via NAT gateways placed in a public subnet that has an internet gateway(IGW) attached.<br>This essentially gives private resources an egress only communication with the outside.
+Since all subnets are by default associated to the VPC default route table, to prevent exposing private resources to the internet, a single route is created via NAT gateways placed in a public subnet that has an internet gateway(IGW) attached. This essentially gives private resources an egress only communication with the outside.
 </p>
 
-<code>
 <pre>
+<code>
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.rr_nat_gateway.id
@@ -70,8 +52,8 @@ Since all subnets are by default associated to the VPC default route table, to p
 A separate route table is created for public resources to access the internet via the IGW.
 </p>
 
-<code>
 <pre>
+<code>
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.ritual-roast-igw.id
@@ -86,20 +68,19 @@ A separate route table is created for public resources to access the internet vi
 <h3>LoadBalancer-SG</h3>
 <ol>
 <li>ingress rule that accepts traffic from the internet on port 80</li>
-<li>egress rule allowing traffic to the application tier<br> i.e. any resource attached to Web-App-SG security group</li>
-<li>This allows the ALB to send traffic to the Flask application<br>served from the EC2 instances created by the ASG.</li>
+<li>egress rule allowing traffic to the application tier i.e. any resource attached to Web-App-SG security group</li>
+<li>This allows the ALB to send traffic to the Flask application served from the EC2 instances created by the ASG.</li>
 </ol>
 </li>
 
 <li>
 <h3>Web-App-SG</h3>
 <ol>
-<li>ingress rule that accepts traffic from <br>LoadBalancer-SG on port 5000</li>
+<li>ingress rule that accepts traffic from LoadBalancer-SG on port 5000</li>
 <li>egress rule that allows communication to any protocol to any ip</li>
-<li>Note these instances are on a private subnet using<br>NAT gateway for outbound communication to the internet <br>thus security is not compromised.
+<li>Note these instances are on a private subnet using NAT gateway for outbound communication to the internet <br>thus security is not compromised.
 </li>
-<li>Since security groups are stateful, it will redirect packets back to LoadBalancer-SG<br>
-without explicitly defining an egress rule for that</li>
+<li>Since security groups are stateful, it will redirect packets back to LoadBalancer-SG without explicitly defining an egress rule for that</li>
 <li>The single egress rule, enables communication with Database-SG</li>
 </ol>
 </li>
@@ -109,8 +90,7 @@ without explicitly defining an egress rule for that</li>
 <ol>
 <li>ingress rule accepting traffic on port 3306 from Web-App-SG</li>
 <li>ingress rule accepting traffic on port 3306 from Lambda-SG</li>
-<li>Managed RDS instances do not initiate outbound connections<br>
-so no need for egress rules.</li>
+<li>Managed RDS instances do not initiate outbound connections so no need for egress rules.</li>
 </ol>
 </li>
 
@@ -118,11 +98,9 @@ so no need for egress rules.</li>
 <h3>Lambda-SG</h3>
 <ol>
 <li>ingress rule accepting traffic from Database-SG on port 3306</li>
-<li>egress rule allowing tcp traffic to any destination on port 443.<br>
-This allows the lambda function to communicate with Secrets Manager
+<li>egress rule allowing tcp traffic to any destination on port 443. This allows the lambda function to communicate with Secrets Manager
 </li>
-<li>Since the lambda function is placed in private subnets and accesses<br>
-the internet via the NAT gateway it cannot be reached from the outside.
+<li>Since the lambda function is placed in private subnets and accesses the internet via the NAT gateway it cannot be reached from the outside.
 </li>
 </ol>
 </li>
@@ -131,23 +109,19 @@ the internet via the NAT gateway it cannot be reached from the outside.
 
 <h2>Secrets Manager</h2>
 <p>
-Secrets Manager is preferred over other methods credential management<br>
-for the following reasons:
+Secrets Manager is preferred over other methods credential management for the following reasons:
 <ul>
 <li>
 Minimizes human error from credential management entirely
 </li>
 <li>
-Mitigates the dangers of storing credentials<br>
-in static,plaintext that easily leak into source code or logs.
+Mitigates the dangers of storing credentials in static,plaintext that easily leak into source code or logs.
 </li>
 <li>
-Heavily minimize the attack surface; by fetching the secret dynamically<br>
-at runtime
+Heavily minimize the attack surface; by fetching the secret dynamically at runtime
 </li>
 <li>
-Lambda function automatically rotate the password every 7 days<br>
-drastically narrows the window of opportunity for an attacker to use a leaked key/password
+Lambda function automatically rotate the password every 7 days drastically narrows the window of opportunity for an attacker to use a leaked key/password
 </li>
 <li>
 Provides an audit trail via its native integration with AWS CloudTrail
@@ -164,17 +138,11 @@ Session manager is preferred over SSH for the following reasons:
 <b>Zero Inbound Network Exposure</b>:
 <ol>
 <li>
-SSH requires that the security group exposes port 22<br>
-on a publicly accessible subnet<br>
-Session manager removes the need for bastion hosts<br>
-instances remain private
+SSH requires that the security group exposes port 22 on a publicly accessible subnet Session manager removes the need for bastion hosts instances remain private
 </li>
-<li>Instances are no longer constant targets<br>
-for brute-force attacks and network scanners</li>
+<li>Instances are no longer constant targets for brute-force attacks and network scanners</li>
 <li>
-Session Manager requires no open inbound ports<br>
-just a HTTPS outbound tunnel from the instance to<br>
-the Systems Manager control plane
+Session Manager requires no open inbound ports just a HTTPS outbound tunnel from the instance to the Systems Manager control plane
 </li>
 </ol>
 </li>
@@ -185,8 +153,7 @@ the Systems Manager control plane
 <li>No more sharing keys with other developers</li>
 <li>No more forgetting to rotate keys</li>
 <li>No security risk of compromised keys</li>
-<li>With session manager, AWS IAM handles the authentication<br>
-and authorization
+<li>With session manager, AWS IAM handles the authentication and authorization
 </li>
 </ol>
 </li>
@@ -195,12 +162,10 @@ and authorization
 <b>Absolute Traceability & Tamper-Proof Logging</b>
 <ol>
 <li>
-SSH does not natively log what a user actually types<br>
-once they get into the server
+SSH does not natively log what a user actually types once they get into the server
 </li>
 <li>
-If a malicious actor or a mistake takes down a database,<br>
-tracing back who ran the specific command on a shared<br>
+If a malicious actor or a mistake takes down a database, tracing back who ran the specific command on a shared 
 Linux user account is incredibly difficult
 </li>
 <li>
@@ -208,13 +173,10 @@ Session Manager provides a built-in, tamper-proof audit trail
 </li>
 <li>AWS records every single session</li>
 <li>
-It can be configured to stream and save <br>
-every single keystroke and command output directly<br>
-to an encrypted Amazon S3 bucket or AWS CloudWatch logs
+It can be configured to stream and save every single keystroke and command output directly to an encrypted Amazon S3 bucket or AWS CloudWatch logs
 </li>
 <li>
-This satisfies massive compliance frameworks<br>
-(like SOC2 and PCI-DSS) out of the box
+This satisfies massive compliance frameworks (like SOC2 and PCI-DSS) out of the box
 </li>
 </ol>
 </li>
@@ -223,15 +185,12 @@ This satisfies massive compliance frameworks<br>
 <b>Native Multi-Factor Authentication (MFA)</b>
 <ol>
 <li>
-Setting up MFA for standard Linux SSH usually requires complex,<br>
-manual configurations with third-party PAM (Pluggable Authentication Modules) or complex bastion setups.
+Setting up MFA for standard Linux SSH usually requires complex, manual configurations with third-party PAM (Pluggable Authentication Modules) or complex bastion setups.
 </li>
 <li>
-Since authentication is enabled via IAM<br>
-we can make use of existing IAM or corporate identity provider policies
+Since authentication is enabled via IAM we can make use of existing IAM or corporate identity provider policies
 </li>
-<li>Additional security measures can be enforced via MFA<br>
-for authentication</li>
+<li>Additional security measures can be enforced via MFA for authentication</li>
 </ol>
 </li>
 
@@ -241,8 +200,7 @@ for authentication</li>
 <h1>6. 🚀 Technical Highlights</h1>
 
 <h2>VPC and Subnetting</h2>
-Ritual Roast requires 16 subnets or sub networks from the VPC CIDR <strong>(10.16.0.0/16)<strong><br> 
-This can be achieved by borrowing from the host bits. The table below shows the derivation of the subnets.<br>
+Ritual Roast requires 16 subnets or sub networks from the VPC CIDR <strong>(10.16.0.0/16)<strong>. This can be achieved by borrowing from the host bits. The table below shows the derivation of the subnets.
 </p>
 
 <table style="width:100%">
@@ -298,8 +256,7 @@ This can be achieved by borrowing from the host bits. The table below shows the 
 <br>
 
 <p>
-Of the 16 subnets required by Ritual Roast, 4 are reserved for possible future AZ in <b>eu-west-2</b><br>
-The remaining 12 subnets are broken down into 4 groups:
+Of the 16 subnets required by Ritual Roast, 4 are reserved for possible future AZ in <b>eu-west-2</b>. The remaining 12 subnets are broken down into 4 groups:
 </p>
 
 <table style="width:100%">
@@ -330,8 +287,7 @@ The remaining 12 subnets are broken down into 4 groups:
 </table>
 
 <p>
-To see the actual names allocated to each of the subnet, please refer to <a href="./documents/Ritual Roast Resource Configuration.pdf">Ritual Roast Resource Configuration</a><br>
-Note, in every subnet, there are 5 IP addresses that are reserved thus cannot be used:
+To see the actual names allocated to each of the subnet, please refer to <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/Ritual%20Roast%20Resource%20Configuration.pdf">Ritual Roast Resource Configuration</a>. Note, in every subnet, there are 5 IP addresses that are reserved thus cannot be used:
 <ul>
 <li><b>10.16.0.0:</b> Network address</li>
 <li><b>10.16.0.1:</b> Reserved by AWS for the VPC Router</li>
@@ -340,16 +296,13 @@ Note, in every subnet, there are 5 IP addresses that are reserved thus cannot be
 <li><b>10.16.15.255:</b> Network broadcast address</li>
 </ul>
 
-Elastic IPs will be allocated for the NAT gateway and released when the project is destroyed.<br>
-With respect to Terraform, the creation of the VPC and Subnets are handled in <a href="./networking.tf">networking.tf</a>.<br>Both the NAT gateway and the IGW creation are handled in <a href="./gateways.tf">gateways.tf<a>
+Elastic IPs will be allocated for the NAT gateway and released when the project is destroyed. With respect to Terraform, the creation of the VPC and Subnets are handled in <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/networking.tf">networking.tf</a>. Both the NAT gateway and the IGW creation are handled in <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/gateways.tf">gateways.tf<a>
 
 </p>
 
 <h2>AutoScaling Group (ASG)</h2>
 <p>
-ASG bridges the gap between static infrastructure and dynamic, self-healing architecture.<br>
-The use of 3 separate subnets in 3 different AZs ensures high availability within the region.<br>
-i.e. if one AZ goes down, we still have 2 available.<br>
+ASG bridges the gap between static infrastructure and dynamic, self-healing architecture. The use of 3 separate subnets in 3 different AZs ensures high availability within the region. i.e. if one AZ goes down, we still have 2 available.
 </p>
 
 <h3>Launch template - Userdata</h3>
@@ -358,19 +311,19 @@ i.e. if one AZ goes down, we still have 2 available.<br>
 The original userdata script from the course had a few issues that needed attention:
 <ol>
 <li>
-The command to run ritual-roast.py looked like:<br>
-<code>nohup python3 ritual-roast.py > /var/log/flask-app.log 2>&1 &</code><br>
-This just ensures that the command runs, in the background,<br>
-even if the shell is terminated and that it redirects errors to<br>
-standard out which is then sent to <b>/var/log/flask-app.log</b>
+The command to run ritual-roast.py looked like: 
+<pre>
+<code>
+nohup python3 ritual-roast.py > /var/log/flask-app.log 2>&1 &
+</code>
+</pre>
+This just ensures that the command runs, in the background, even if the shell is terminated and that it redirects errors to standard out which is then sent to <b>/var/log/flask-app.log</b>
 </li>
 <li>If the App crashes, this would not restart it</li>
-<li>Registering the application as a service with systemd service<br>
-enables Linux to restart the service if it crashes.
+<li>Registering the application as a service with systemd service enables Linux to restart the service if it crashes.
 </li>
 <li>
-Using the <b>exec</b> command captures the entire scripts output<br>
-like a blackbox flight recorder<br>
+Using the <b>exec</b> command captures the entire scripts output like a blackbox flight recorder
 
 <pre>
 <code>
@@ -381,35 +334,23 @@ like a blackbox flight recorder<br>
 not just the output of running the python script, as in the original.
 </li>
 <li>
-This is useful because <b>AWS user data runs completely in the background<br>
-and if the script fails, it fails silently, no output</b><br>
-Putting the exec command at the top of the output means we're collecting<br>
-all the output, including errors, and redirecting them to a file.
+This is useful because <b>AWS user data runs completely in the background and if the script fails, it fails silently, no output</b> Putting the exec command at the top of the output means we're collecting all the output, including errors, and redirecting them to a file.
 </li>
 
 <li>
-Downloading the AWS global-bundle.pem ensures that communication with the database<br>
-are secured via ssl. In additions adding the <b>-sS --fail -O</b> options ensure that<br>
-strict certificate checking is performed and that the script <b>hard-fails</b> if the secure<br>
-connection can't be verified.
+Downloading the AWS global-bundle.pem ensures that communication with the database are secured via ssl. In additions adding the <b>-sS --fail -O</b> options ensure that strict certificate checking is performed and that the script <b>hard-fails</b> if the secure connection can't be verified.
 </li>
 
 <li>
-Ensuring root owns the certificate and readonly access for others<br>
-enhances security i.e. if the ec2-user owns the certificate a breach of security<br>
-would give a bad actor ec2-user permissions enabling them to swap the valid<br>
-certificate with a malicious copy.
+Ensuring root owns the certificate and readonly access for others enhances security i.e. if the ec2-user owns the certificate a breach of security would give a bad actor ec2-user permissions enabling them to swap the valid certificate with a malicious copy.
 </li>
 
 <li>
-However, no checksum of the certificate file is carried out here.<br>
-A SHA256 Checksum would be a security enhancement to ensure that<br>
-the certificate has not been tampered with.
+However, no checksum of the certificate file is carried out here. A SHA256 Checksum would be a security enhancement to ensure that the certificate has not been tampered with.
 </li>
 
 <li>
-The use of an isolated Python virtual environment prevents dependency conflict<br>
-between the application and the operating system native tools.
+The use of an isolated Python virtual environment prevents dependency conflict between the application and the operating system native tools.
 </li>
 
 </ol>
@@ -418,41 +359,31 @@ between the application and the operating system native tools.
 <h3>Updating Launch template</h3>
 
 <p>
-Updating the Launch template will lead to AWS throwing an error regarding the ASG.<br>
-Below are the steps that lead to this error:
+Updating the Launch template will lead to AWS throwing an error regarding the ASG. Below are the steps that lead to this error:
 </p>
 
 <ol>
 <li>In AWS the name of the ASG is it's unique identifier</li>
-<li>AWS does not allow two ASGs to exist with the same name<br>
-simultaneously.
+<li>AWS does not allow two ASGs to exist with the same name simultaneously.
 </li>
-<li>AWS also does not allow the renaming of an ASG once created<br>
-i.e. it's an immutable property
+<li>AWS also does not allow the renaming of an ASG once created i.e. it's an immutable property
 </li>
 
 </ol>
-<br>
-The problem: Terraform's default behaviour<br>
-Lets assume we don't change ASG name while updating the Launch template<br>
-Terraform will try to do this in the following order
+
+<b>The problem</b>: Terraform's default behaviour. Lets assume we don't change ASG name while updating the Launch template Terraform will try to do this in the following order:
 <ol>
 <li>Terraform sees Launch template changed</li>
 <li>To prevent application down time</li>
-<li>It attempts to create the <b>new</b> ASG with the <b>new</b> template<br>
-before destroying the old ASG
+<li>It attempts to create the <b>new</b> ASG with the <b>new</b> template before destroying the old ASG
 </li>
 <li>AWS throws an error:<br>
 <i><b>"AutoScalingGroup with name 'rr-asg' already exists."</b></i>
 </li>
-<li>Forcing Terraform to delete the old one first using<br>
-<i><b>"lifecycle { create_before_destroy = false }"</b></i><br>
-Would create a different problem.
+<li>Forcing Terraform to delete the old one first using <i><b>"lifecycle { create_before_destroy = false }"</b></i> Would create a different problem.
 </li>
-<li>AWS takes several minutes to drain traffic from an instance<br>
-and delete an ASG</li>
-<li>Terraform would time out waiting for the old ASG to be deleted<br>
-so that it can use the name to create the new one
+<li>AWS takes several minutes to drain traffic from an instance and delete an ASG</li>
+<li>Terraform would time out waiting for the old ASG to be deleted so that it can use the name to create the new one
 </li>
 
 </ol>
@@ -464,20 +395,20 @@ using the latest launch template version:
 <br>
 </p>
 
-<code>
 <pre>
+<code>
   ${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}
 
   name = "rr-asg-${aws_launch_template.rr_launch_template.latest_version}-${random_id.asg_suffix.hex}"
 </code>
 </pre>
+
 <p>
-This is a strategy called "Immutable Infrastructure" i.e. replacing resources entirely instead<br>
-of modifying them in place.
+This is a strategy called "Immutable Infrastructure" i.e. replacing resources entirely instead of modifying them in place.
 
 Now when we run:
-<code>
 <pre>
+<code>
   tf apply -auto-approve
 </code>
 </pre>
@@ -488,18 +419,14 @@ The following happens:
 
 <ol>
 <li>
-Terraform sees the version in the name string changed<br>
-from <b>"v1-abcd"</b> to <b>"v2-abcd"</b><br>
-<i>Note, these are example random hex values that would be used</i>
+Terraform sees the version in the name string changed from <b>"v1-abcd"</b> to <b>"v2-abcd"</b> <i>Note, these are example random hex values that would be used</i>
 </li>
 <li>It creates a brand new ASG named <b>"rr-asg-2-abcd"</b>
 side by side with the old ASG
 </li>
 <li>For a brief moment both sets of instances will be running</li>
 <li>Then the ALB will start sending traffic to the new ASG</li>
-<li>Once the new instances are healthy<br>
-Terraform safely deletes the old ASG <b>rr-asg-1-abcd</b><br>
-and it's instances
+<li>Once the new instances are healthy Terraform safely deletes the old ASG <b>rr-asg-1-abcd</b> and it's instances
 </li>
 <li>This is essentially a Blue/Green style deployment</li>
 <li>Ultimately, the end user experiences zero downtime</li>
@@ -512,14 +439,10 @@ and it's instances
 <h3>Target tracking configuration</h3>
 
 <p>
-Target tracking allows the infrastructure to smooth out spikes in traffic without over-provisioning<br>
-and wasting money. This process is facilitated by communication between ALB, CloudWatch and ASG.<br>
-Setting the target tracking to 50.0 is the middle ground, perhaps not optimal.<br>
-However, for the purpose of this demonstration, it is satisfactory.<br>
+Target tracking allows the infrastructure to smooth out spikes in traffic without over-provisioning and wasting money. This process is facilitated by communication between ALB, CloudWatch and ASG. Setting the target tracking to 50.0 is the middle ground, perhaps not optimal. However, for the purpose of this demonstration, it is satisfactory.
 </p>
-
-<code>
 <pre>
+<code>
   target_tracking_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ASGAverageCPUUtilization"
@@ -532,37 +455,26 @@ However, for the purpose of this demonstration, it is satisfactory.<br>
 </pre>
 
 <p>
-When traffic increases, the following happen:<br>
+When traffic increases, the following happen:
 
 <ol>
 <li>
-The ALB receives increased traffic and<br>
-distributes between the two instances<br>
-using Round-Robin algorithm
+The ALB receives increased traffic and distributes between the two instances using Round-Robin algorithm
 </li>
 <li>
-CPU spikes above the threshold of 50%, averaged across the two instances<br>
-lets say it reaches 80%
+CPU spikes above the threshold of 50%, averaged across the two instances lets say it reaches 80%
 </li>
 <li>
-The CloudWatch alarm is triggered and the ASG is notified<br>
-of the high CPU utilization across the two instances
+The CloudWatch alarm is triggered and the ASG is notified of the high CPU utilization across the two instances
 </li>
 <li>
-ASG spins up an extra instance or two based on the Launch template<br>
-up to the defined maximum, 4 in this case.
+ASG spins up an extra instance or two based on the Launch template up to the defined maximum, 4 in this case.
 </li>
 <li>
-Instance(s) prepare to receive traffic in the warm up period<br>
-3 minutes in this case. Here the instance runs the <b>user_data</b> script.<br>
-This is where the packages are installed<br>
-and the application tests connection to the database.
+Instance(s) prepare to receive traffic in the warm up period 3 minutes in this case. Here the instance runs the <b>user_data</b> script. This is where the packages are installed and the application tests connection to the database.
 </li>
 <li>
-After the 3 minutes, the instance(s) are ready to receive traffic.<br>
-The ALB registers the new instances and starts sending them traffic.<br>
-The distribution of the traffic between the instances reduces the<br>
-"Average CPU Utilization" down towards the target 50%
+After the 3 minutes, the instance(s) are ready to receive traffic. The ALB registers the new instances and starts sending them traffic. The distribution of the traffic between the instances reduces the "Average CPU Utilization" down towards the target 50%
 </li>
 </ol>
 
@@ -571,39 +483,29 @@ When traffic drops, the following happen:
 
 <ol>
 <li>
-The ALB receives few traffic and the CPU<br>
-utilization drops significantly below the threshold
+The ALB receives few traffic and the CPU utilization drops significantly below the threshold
 </li>
 <li>
-This triggers a "Low CPU Alarm" in CloudWatch<br>
-and CloudWatch notifies the ASG
+This triggers a "Low CPU Alarm" in CloudWatch and CloudWatch notifies the ASG
 </li>
 <li>
-This setting "<b>disable_scale_in = false</b>" enables the ASG<br>
-to reduce the number of instances, scale in.<br>
-The ASG selects an instance to terminate
+This setting "<b>disable_scale_in = false</b>" enables the ASG to reduce the number of instances, scale in. The ASG selects an instance to terminate
 </li>
 <li>
-The process of connection draining starts before the ASG terminates the instance<br>
-The ALB stops sending new traffic to the instance and the instance is allowed to finish<br>
-any requests it is currently processing before termination.
+The process of connection draining starts before the ASG terminates the instance The ALB stops sending new traffic to the instance and the instance is allowed to finish any requests it is currently processing before termination.
 </li>
-<li>When the draining is complete the ASG terminates the instance<br>
-
+<li>
+When the draining is complete the ASG terminates the instance
 </li>
 </ol>
-<br>
-Although this makes the infrastructure dynamic and flexible to handle demand more effectively<br>
-the warm up period of 3 minutes is a barrier which does impact on the availability of services,<br>
-when it's really needed. There are alternatives, <b>not discussed here</b>, that reduce warm up period<br>
-significantly such as containerization with ECS or Fargate. This will drop the warmup time from 3 minutes to<br>
-10-15 seconds.
+
+Although this makes the infrastructure dynamic and flexible to handle demand more effectively the warm up period of 3 minutes is a barrier which does impact on the availability of services, when it's really needed. There are alternatives, <b>not discussed here</b>, that reduce warm up period significantly such as containerization with ECS or Fargate. This will drop the warmup time from 3 minutes to 10-15 seconds.
 </p>
 
 <h3>Including a "depends_on" parameter:</h3>
 
-<code>
 <pre>
+<code>
   depends_on = [
     aws_secretsmanager_secret_version.db_host_update,
     aws_db_instance.ritual_roast_db
@@ -617,8 +519,7 @@ specifies the order in which resources will be created.
 <ol>
 <li>This ensures that the database is created first</li>
 <li>
-Once the database is created, the secret storing database credentials is updated<br>
-with the database host information<br>
+Once the database is created, the secret storing database credentials is updated with the database host information
 
 <pre>
 <code>
@@ -627,16 +528,13 @@ with the database host information<br>
 </pre>
 
 </li>
-<li>The ASG then launches instances that use the host information<br>
-to connect to the database
+<li>The ASG then launches instances that use the host information to connect to the database
 </li>
 </ol>
 
-Without the above sequence<br>
-
+Without the above sequence
 <ol>
-<li>Terraform would create ASG and RDS instances in parralel<br>
-to save time.
+<li>Terraform would create ASG and RDS instances in parralel to save time.
 </li>
 <li>AWS RDS takes 5 to 13 minutes to fully provision</li>
 <li>While the ASG will spin up EC2 instances in a few minutes</li>
@@ -644,19 +542,15 @@ to save time.
 with incorrect host value i.e. the "PLACEHOLDER"
 </li>
 <li>The database is unvailable as its still provisioning</li>
-<li>The Application crashes and triggers an exit<br>
-<b>"sys.exit(1)</b>
+<li>The Application crashes and triggers an exit <b>"sys.exit(1)</b>
 </li>
-<li>Systemd waits 5 seconds and restarts the application service<br>
-and it crashes again
+<li>Systemd waits 5 seconds and restarts the application service and it crashes again
 </li>
 <li>The ALB checks the /health endpoint of the instances</li>
 <li>since the application keeps crashing, the health checks fails.</li>
-<li>Since the ASG is using ALB health metrics<br>
-The ALB will tell the ASG that the instances are unhealthy
+<li>Since the ASG is using ALB health metrics the ALB will tell the ASG that the instances are unhealthy
 </li>
-<li>The ASG would then terminate those instances and recreate new ones<br>
-which would also fail their health checks
+<li>The ASG would then terminate those instances and recreate new ones which would also fail their health checks
 </li>
 <li>This loop would go on until the RDS instance is ready to receive traffic
 </li>
@@ -668,23 +562,17 @@ which would also fail their health checks
 
 <h2>S3 remote bucket</h2>
 <p>
-Using a separate Terraform deployment, an S3 bucket was created to act as the Ritual Roast central repository.<br>
-This S3 is used as the repository for the application code; the backend for the Terraform state file<br>
-and the state lock file; it also houses the index.zip script for the lambda function to rotate secrets.<br>
-The bucket has versioning enabled facilitating the flexibility to roll back faulty configuration changes/updates.
+Using a separate Terraform deployment, an S3 bucket was created to act as the Ritual Roast central repository. This S3 is used as the repository for the application code; the backend for the Terraform state file and the state lock file; it also houses the index.zip script for the lambda function to rotate secrets. The bucket has versioning enabled facilitating the flexibility to roll back faulty configuration changes/updates.
 </p>
 
 <h3>Application repository</h3>
 
 <p>
-The source code for the flask application is bundled up and uploaded to this bucket. This decouples the source<br>
-code from the project infrastructure enabling greater flexibility for pushing changes.<br>
-All instances created by the ASG will pull code from this bucket. This means all the instances will have the<br> latest code, at the point of creation. Thus identical, with the exception of new updates.<br>
-To refresh the instances so they have the latest updates we can run the following on aws cli:
+The source code for the flask application is bundled up and uploaded to this bucket. This decouples the source code from the project infrastructure enabling greater flexibility for pushing changes. All instances created by the ASG will pull code from this bucket. This means all the instances will have the latest code, at the point of creation. Thus identical, with the exception of new updates. To refresh the instances so they have the latest updates we can run the following on aws cli:
 </p>
 
-<code>
 <pre>
+<code>
   aws autoscaling start-instance-refresh \
       --auto-scaling-group-name rr_autoscaling_group \
       --preferences '{"MinHealthyPercentage": 50}'
@@ -693,13 +581,12 @@ To refresh the instances so they have the latest updates we can run the followin
 
 <p>
 The aws cli is used above instead of Terraform because no changes have been made to the ASG or Launch template
-meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy and replace the instances one by one pulling the freshly updated source code in the process.
-Note, the instances use roles with s3 bucket access policy to sync with s3, at boot.
+meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy and replace the instances one by one pulling the freshly updated source code in the process. Note, the instances use roles with s3 bucket access policy to sync with s3, at boot.
 </p>
 
 <h3>Flask App (ritual-roast.py)</h3>
 <p>
-This single script, <a href="./documents/ritual-roast.py">ritual-roast.py</a> is the infrastructure aware central nervous system of the project. It is the intersection betweeen the python backend and the Flask frontend web server.
+This single script, <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/ritual-roast.py">ritual-roast.py</a> is the infrastructure aware central nervous system of the project. It is the intersection betweeen the python backend and the Flask frontend web server.
 
 It does the following:
 <ol>
@@ -768,7 +655,8 @@ In this project an S3 bucket is used as the remote backend.
 
 Once all collaborators have access to the bucket, it is necessary to prevent multiple collaborators pushing changes simultaneously, which would overwrite the previous change without notice. To avoid this, a state lock file is used, `use_lockfile = true`. This ensures that only a single collaborator can apply/push configuration changes to our infrastructure at a time. While they make those changes the state file is locked and others are prevented from doing so. When they finish, the state lock is released enabling others to see the changes by running `terraform plan` and to push their changes to the project with `terraform apply`.
 The backend configuration loooks like:
-<pre><code>
+<pre>
+<code>
   backend "s3" {
     bucket       = "rr-capstone-5b160b287a99a6d9"
     key          = "state/terraform.tfstate"
@@ -776,7 +664,8 @@ The backend configuration loooks like:
     encrypt      = true
     use_lockfile = true
   }
-</code></pre>
+</code>
+</pre>
 
 With respect to the providers and version constrains, the following is used:
 <ul>
@@ -806,8 +695,7 @@ Below are brief summaries of each component:
 
 <ol>
 <li>
-<b>Python Logging module</b> links the lambda function to CloudWatch Logs i.e. this sends metrics, error logs in this case, that aids debugging failures. Note, the log level has been set to `INFO` which reports general,
-no debugging noise, outputs and errors. `logger = logging.getLogger()` and `logger.setLevel(logging.INFO)`
+<b>Python Logging module</b> links the lambda function to CloudWatch Logs i.e. this sends metrics, error logs in this case, that aids debugging failures. Note, the log level has been set to `INFO` which reports general, no debugging noise, outputs and errors. `logger = logging.getLogger()` and `logger.setLevel(logging.INFO)`
 </li>
 
 
@@ -816,11 +704,7 @@ no debugging noise, outputs and errors. `logger = logging.getLogger()` and `logg
 </li>
 
 <li>
-`get_secret_dict`: This function retrieves and parses the secret in json format ready to be consumed by<br>
-other functions. The use of token identifies and locks in the specific version of the secret `VersionId`<br>
-for the tasks at hand. In additions, `VersionStage` allows the lambda function to work with both the old<br>
-`AWSCURRENT` and the new `AWSPENDING` passwords i.e. to change the password, lambda needs to first<br>
-authenticate using the current password and then reset the password to the new one.
+`get_secret_dict`: This function retrieves and parses the secret in json format ready to be consumed by other functions. The use of token identifies and locks in the specific version of the secret, `VersionId`, for the tasks at hand. In additions, `VersionStage` allows the lambda function to work with both the old `AWSCURRENT` and the new `AWSPENDING` passwords i.e. to change the password, lambda needs to first authenticate using the current password and then reset the password to the new one.
 </li>
 
 <li>
@@ -830,31 +714,24 @@ authenticate using the current password and then reset the password to the new o
 <li>Invokes the `generate_random_password` function to create a new password</li>
 <li>Replacing the <b>dictionary's</b> `AWSCURRENT` password inplace</li>
 <li>
-Pushes the change back to Secrets Manager<br>
-tagging it with `VersionStages` equal to `AWSPENDING`
+Pushes the change back to Secrets Manager tagging it with `VersionStages` equal to `AWSPENDING`
 </li>
 <li>
-This ensures that we don't overwrite the current password<br>
-by mistake before the change over.
+This ensures that we don't overwrite the current password by mistake before the change over.
 </li>
 <li>
-The push is ignored if a secret with `VersionStages` equal to `AWSPENDING`<br>
-already exists. 
+The push is ignored if a secret with `VersionStages` equal to `AWSPENDING` already exists. 
 </li>
 </ul>
 </li>
 
 <li>
-`set_secret`: This function is the only point of contact with the database.<br>
-It performs the following tasks:<br>
+`set_secret`: This function is the only point of contact with the database. It performs the following tasks:
 <ol>
-<li>Retrieves both the current password `AWSCURRENT`<br>
-and the new password `AWSPENDING` </li>
+<li>Retrieves both the current password `AWSCURRENT` and the new password `AWSPENDING` </li>
 <li>Connects to the database using the current password</li>
 <li>
-Executes an `ALTER USER` command to change the password<br>
-to the new password.<br>
-
+Executes an `ALTER USER` command to change the password to the new password.
 <pre>
 <code>
   with conn.cursor() as cursor:
@@ -868,9 +745,7 @@ to the new password.<br>
 </li>
 <li>Then commits the change and closes the connection</li>
 <li>
-If something goes wrong, the error is handled with the exception<br>
-which logs the error.<br>
-
+If something goes wrong, the error is handled with the exception which logs the error.
 <pre>
 <code>
  except Exception as e:
@@ -885,24 +760,22 @@ which logs the error.<br>
 </li>
 
 <li>
-`test_secret`: This function proves that the password update was a success.<br>
-It performs the following tasks:
+`test_secret`: This function proves that the password update was a success. It performs the following tasks:
 <ol>
 <li>
-Tests connection to the database with the newly updated password.<br>
-That's the password labeled as `AWSPENDING`
+Tests connection to the database with the newly updated password. That's the password labeled as `AWSPENDING`
 </li>
 <li>If the connection is successful it closes the connection.</li>
 <li>
-If it errors out, it logs the error before the raised exception terminates the execution<br>
-and reports the failure to CloudWatch, essentially slamming the emergency breaks on and<br>
-sounding the alarm.
+If it errors out, it logs the error before the raised exception terminates the execution and reports the failure to CloudWatch, essentially slamming the emergency breaks on and sounding the alarm.
 
-<pre><code>
+<pre>
+<code>
 except Exception as e:
     logger.error(f"Failed to update database password: {e}")
     raise 
-</code></pre>
+</code>
+</pre>
 </li>
 
 
@@ -910,70 +783,51 @@ except Exception as e:
 </li>
 
 <li>
-`finish_secret`: This function updates the secret in Secrets Manager.<br>
-It performs the following tasks:<br>
+`finish_secret`: This function updates the secret in Secrets Manager. It performs the following tasks:
 <ol>
 <li>Retrieves the secret from Secrets Manager</li>
 
 <li>
-Verifies that the secret hasn't already been updated (swapped)<br>
-by checking that the version id of `AWSCURRENT` doesn't match the token,<br>
-the id on `AWSPENDING` password, if it does then it skip this step and exits.
+Verifies that the secret hasn't already been updated (swapped) by checking that the version id of `AWSCURRENT` doesn't match the token, the id on `AWSPENDING` password, if it does then it skip this step and exits.
 </li>
 
 <li>
-If the secret hasn't been swapped yet then remove the version id from `current_version`<br>
-and move the version id to ``token` which would update the value held in<br>
-`AWSCURRENT` to the value in `AWSPENDING`.<br>
-This is called an "atomic swap".
+If the secret hasn't been swapped yet then remove the version id from `current_version` and move the version id to ``token` which would update the value held in `AWSCURRENT` to the value in `AWSPENDING`. This is called an "atomic swap".
 </li>
 </ol>
 </li>
 
 <li>
-`lambda_handler`: This function is the central nervous system of the operation,<br>
-responsible for managing the secrets lifecycle from start to finish.<br>
-It performs the following tasks:
+`lambda_handler`: This function is the central nervous system of the operation, responsible for managing the secrets lifecycle from start to finish. It performs the following tasks:
 <ol>
 <li>
 Secret manager invokes this function, passing to it two arguments:
 <ol>
 <li>
-<b>event</b>: A dictionary containing 4 key values:<br>
-SecretId, ClientRequestToken, Step, and RotationToken<br>
-Note, the step is the current phase of the rotation<br>
-one of; `createSecret`, `setSecret`, `testSecret`, or `finishSecret`
+<b>event</b>: A dictionary containing 4 key values: SecretId, ClientRequestToken, Step, and RotationToken Note, the step is the current phase of the rotation one of; `createSecret`, `setSecret`, `testSecret`, or `finishSecret`
 </li>
 
 <li>
-<b>context</b>: This provides metadata regarding the execution environment<br>
-such as `aws_request_id`.
+<b>context</b>: This provides metadata regarding the execution environment such as `aws_request_id`.
 </li>
 </ol>
 </li>
 
 <li>
-The function extracts the key values from the event into variables<br>
-for later use.
+The function extracts the key values from the event into variables for later use.
 </li>
 <li>
-The function verifies that the rotation is enabled `RotationEnabled` by retrieving<br>
-the metadata with `describe_secret`.<br>
-Note, if rotation is <b>not</b> enabled, the error is logged, and this will raise<br>
-a `ValueError` which terminates the execution and reports a failure metric to CloudWatch.
+The function verifies that the rotation is enabled `RotationEnabled` by retrieving the metadata with `describe_secret`. Note, if rotation is <b>not</b> enabled, the error is logged, and this will raise a `ValueError` which terminates the execution and reports a failure metric to CloudWatch.
 </li>
 <li>
-Once `RotationEnabled` is verified execution of the rotation functions begin,<br>
-conditional on the phase, `step` value, retrieved from the event.
+Once `RotationEnabled` is verified execution of the rotation functions begin, conditional on the phase, `step` value, retrieved from the event.
 </li>
 
 <li>
-Thus Secrets Manager invokes this function 4 times each time with a different value<br>
-for phase.
+Thus Secrets Manager invokes this function 4 times each time with a different value for phase.
 </li>
 <li>
-If an invalid value is passed into `step` then the error is logged and a `ValueError` is raised.<br>
-once again terminating the execution and reporting the failure to CloudWatch.
+If an invalid value is passed into `step` then the error is logged and a `ValueError` is raised. once again terminating the execution and reporting the failure to CloudWatch.
 </li>
 
 </ol>
@@ -987,10 +841,7 @@ once again terminating the execution and reporting the failure to CloudWatch.
 <h3>Lambda secrets rotation role `lambda_secrets_role`</h3>
 
 <p>
-The role is an aggregation of permissions that allow the function to communicate with AWS services for<br>
-the successfull execution of secrets rotation. The lambda function assumes the role when it is invoked by<br>
-Secrets Manager.<br>
-
+The role is an aggregation of permissions that allow the function to communicate with AWS services for the successfull execution of secrets rotation. The lambda function assumes the role when it is invoked by Secrets Manager.
 <pre>
 <code>
 resource "aws_iam_role" "lambda_secrets_role" {
@@ -1014,34 +865,29 @@ resource "aws_iam_role" "lambda_secrets_role" {
 </code>
 </pre>
 
-Following the principle of least privileges, the following permissions are attached to the role:<br>
-
+Following the principle of least privileges, the following permissions are attached to the role:
 <ul>
 <li>
-`lambda_vpc_access`: This policy attachment pulls in an AWS managed policy `AWSLambdaVPCAccessExecutionRole`<br>
-
+`lambda_vpc_access`: This policy attachment pulls in an AWS managed policy `AWSLambdaVPCAccessExecutionRole`
 <pre>
 <code>
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 </code>
 </pre>
 
-which facilitates a number of actions required for the lambda function:<br>
+which facilitates a number of actions required for the lambda function:
 <ol>
 
 <li>
-`ec2:CreateNetworkInterface`: Allows the lambda function to create <b>Elastic Network Interfaces(ENI)</b><br>
-inside the private subnets. This is how it is able to find and communicate with the database i.e. it gives<br>
-the lambda function footing in the database subnets. Note the lambda function can reside in another subnet<br> that has access to the database subnets.
+`ec2:CreateNetworkInterface`: Allows the lambda function to create <b>Elastic Network Interfaces(ENI)</b> inside the private subnets. This is how it is able to find and communicate with the database i.e. it gives the lambda function footing in the database subnets. Note the lambda function can reside in another subnet that has access to the database subnets.
 </li>
 
 <li>
-<b>View Network Topology</b>: a combination of these actions; `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`,`ec2:DescribeSecurityGroups`, allow the lambda function to look around the network <br>
-essentially finding it's path to the database.
+<b>View Network Topology</b>: a combination of these actions; `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`,`ec2:DescribeSecurityGroups`, allow the lambda function to look around the network essentially finding it's path to the database.
 </li>
 
 <li>
-`ec2:DeleteNetworkInterface`: Because lambda functions are ephemeral, when it has completed the rotation tasks <br> it needs to delete the <b>ENIs</b> that were created to eliminate left over/orphaned resources costs.
+`ec2:DeleteNetworkInterface`: Because lambda functions are ephemeral, when it has completed the rotation tasks it needs to delete the <b>ENIs</b> that were created to eliminate left over/orphaned resources costs.
 
 </li>
 
@@ -1050,10 +896,12 @@ essentially finding it's path to the database.
 
 <li>
   `lambda_basic_execution`: This policy attachment allows the Lambda function to <b>tell its story</b>. 
-  It pulls in the AWS managed policy <code>AWSLambdaBasicExecutionRole</code>:
-  <pre><code>
+  It pulls in the AWS managed policy `AWSLambdaBasicExecutionRole`:
+  <pre>
+  <code>
     policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  </code></pre>
+  </code>
+  </pre>
   This facilitates the communication between the Lambda and <b>AWS CloudWatch</b> via the following actions:
 
   <ol>
@@ -1073,7 +921,7 @@ essentially finding it's path to the database.
 <strong><code>rr_lambda_secrets_custom_policy</code></strong>: This is a surgical, "Least Privilege" userdefined  policy that gives the Lambda function the exact tools it needs to rotate credentials without exposing the rest of the AWS account. These tools are the actions that can be performed on restricted secrets resources that match this prefix `secret:rr-db-secret-*` in the name.
 <pre> 
 <code>
-        Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
+  Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
 </code>
 </pre>
 
@@ -1115,27 +963,31 @@ This role enables the EC2 instances created by the ASG to securely perform the f
 
 <ol>
 <li>Communicate with S3 to pull assets and configurations. Note this policy specifies explicitly which bucket this applies to
-<pre><code>
-        Resource = [
-          "${data.aws_s3_bucket.RR-bucket.arn}",
-          "${data.aws_s3_bucket.RR-bucket.arn}/*"
-        ]
-</code></pre>
+<pre>
+<code>
+  Resource = [
+    "${data.aws_s3_bucket.RR-bucket.arn}",
+    "${data.aws_s3_bucket.RR-bucket.arn}/*"
+  ]
+</code>
+</pre>
 </li>
 <li>Communicate with Secrets Manager to retrieve database credentials. Note, it's also explicitly specified which secret this applies to:
-<pre><code>
-        Resource = "${aws_secretsmanager_secret.db_secret.arn}"
-</code></pre>
+<pre>
+<code>
+  Resource = "${aws_secretsmanager_secret.db_secret.arn}"
+</code>
+</pre>
 
 Using the resource ARN makes the secret retrieval flexible to changes in secrets version as the secrets rotate
 i.e. instead of being locked into one version, which would break the application, the application automatically consumes the latest version.
 </li>
-<li>Communicate with AWS Systems Manager (SSM)</li>
-</ol>
+<li>
+Communicate with AWS Systems Manager (SSM)
 
 The communication with S3 and Secrets Manager are enabled by the `rr_ec2_s3_secret_policy` policy actions.
 Here is a breakdown of these actions:
-<ol>
+<ul>
 
 <li>
 `s3:GetObject`: Allow instances to retrieve objects from S3.
@@ -1148,6 +1000,8 @@ Here is a breakdown of these actions:
 <li>
 `secretsmanager:GetSecretValue`: Allows the instances to retrieve the secrets value i.e. the DB credentials
 from Secrets Manager.
+</li>
+</ul>
 </li>
 </ol>
 
@@ -1205,11 +1059,11 @@ This lambda function `secret_rotation_function` executes the python code `index.
 Placing this Lambda inside the database_subnets ensures that the traffic between the Lambda and the Database never touches the public internet. It’s a private-to-private handshake.
 <pre>
 <code>
-    subnet_ids = [
-      aws_subnet.database_subnets[0].id,
-      aws_subnet.database_subnets[1].id,
-      aws_subnet.database_subnets[2].id
-    ]
+  subnet_ids = [
+    aws_subnet.database_subnets[0].id,
+    aws_subnet.database_subnets[1].id,
+    aws_subnet.database_subnets[2].id
+  ]
 </code>
 </pre>
 
@@ -1232,9 +1086,9 @@ Without this, applying any code update with `terraform apply` would do nothing. 
 VPC-based Lambdas require specific permissions to create Elastic Network Interfaces (ENIs) during initialization. Because AWS IAM is eventually consistent, a Lambda might attempt to boot before its permissions have fully propagated.
 <pre>
 <code>
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_vpc_access
-  ]
+depends_on = [
+  aws_iam_role_policy_attachment.lambda_vpc_access
+]
 </code>
 </pre>
 depends_on acts as a sequencing gate, forcing Terraform to wait until the VPC permissions are fully attached and active before attempting to initialize the Lambda function.
@@ -1245,7 +1099,7 @@ depends_on acts as a sequencing gate, forcing Terraform to wait until the VPC pe
 <b>Dedicated Networking</b> (`Lambda-SG`): The function is assigned a dedicated Security Group, allowing for granular control over outbound traffic to the RDS instance while maintaining strict isolation from the application-tier EC2s
 <pre>
 <code>
-    security_group_ids = [aws_security_group.Lambda-SG.id]
+security_group_ids = [aws_security_group.Lambda-SG.id]
 </code>
 </pre>
 </li>
@@ -1388,6 +1242,163 @@ This ensures the database is unreachable from the public internet and is only ac
 </li>
 
 </ol>
+
+</p>
+
+<h1>Instructions</h1>
+<p>
+To deploy this project this infrastructure, follow the steps below:
+<ol>
+<li>
+<b>Setup S3 backend</b>: In <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/terraform.tf">terraform.tf</a> change the bucket name from `rr-capstone-5b160b287a99a6d9` to your designated bucket name
+</li>
+<li>
+<b>Update the region in ritual-roast.py</b>: Go to your `ritual-roast-app` directory, under the `Flask` directory open `ritual-roast.py` and change the region to your desired region
+<pre>
+<code>
+client = session.client(service_name="secretsmanager", region_name="eu-west-2")
+</code>
+</pre>
+<b>You can obtain these files from the course.</b>
+My recommendation is to make the above change in the ritual-roast.py that I've provided and then replace the file in the `Flask` subdirectory with this one.
+</li>
+<li>
+<b>Source code repository on s3</b>: Ensure the source code is on the S3 Bucket that you sepecified in your backend. You can upload the source code with aws cli using:
+<pre>
+<code>
+aws s3 cp ./ritual-roast-app s3://your-bucket-name --recursive
+</code>
+</pre>
+</li>
+
+<li>
+<b>Set region in index.py</b>: Open index.py and change the following to your desired:
+<pre>
+<code>
+client = session.client(service_name="secretsmanager", region_name="eu-west-2")
+</code>
+</pre>
+Set `region_name="eu-west-2"` to the region that you are using.
+</li>
+<li>
+<b>Lambda code and dependency</b>: 
+To package the lambda function and it's dependency do the following:
+<ol>
+<li>
+Ensure that you are in the same directory as your index.py. Create a temporary directory that will hold the lambda function code and it's dependency.
+<pre>
+<code>
+mkdir my_rotation_dependencies
+</code>
+</pre>
+</li>
+<li>
+Once you have the directory `my_rotation_dependencies` created, execute  `rotation-dependencies.sh
+<pre>
+<code>
+./rotation-dependencies.sh
+</code>
+</pre>
+Note, the commands to remove the directory `my_rotation_dependencies` afterwards are commented out. Uncomment them to do everything in one go.
+</li>
+</ol>
+</li>
+
+<li>
+<b>Lambda .zip</b>: Upload the index.zip file to the same S3 bucket
+<pre>
+<code>
+aws s3 cp ./index.zip s3://your-bucket-name --recursive
+</code>
+</pre>
+</li>
+
+<li>
+<b>Update the userdata</b>: open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/autoscale.tf">autoscale.tf</a> and change the region under `userdata`
+
+<pre>
+<code>
+aws s3 sync s3://${var.app_source_bucket} /home/ec2-user/myflaskapp --region eu-west-2
+</code>
+</pre>
+
+Change `--region eu-west-2` to your desired region.
+</li>
+<li>
+<b>Update `app_source_bucket` variable</b>: Open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/variables.tf">variables.tf</a>, scroll to the bottom and change the bucket name to your bucket's name.
+<pre>
+<code>
+default     = "rr-capstone-5b160b287a99a6d9"
+</code>
+</pre>
+
+</li>
+<li>
+<b>Export db credentials</b>: in the terminal export the database username and password
+<pre>
+<code>
+export TF_VAR_db_username="admin"
+</code>
+</pre>
+
+<pre>
+<code>
+export TF_VAR_db_password="YourSecurePassword123!"
+</code>
+</pre>
+</li>
+
+
+<li>
+<b>Initialize terraform</b>: In the terminal run the following
+<pre>
+<code>
+terraform init
+</code>
+</pre>
+</li>
+
+<li>
+<b>
+Terraform plan</b>: To view the changes that will be made run the following in your terminal:
+<pre>
+<code>
+terraform plan
+</code>
+</pre>
+</li>
+
+<li>
+<b>Apply the changes</b>: If you are happy with the changes run the following in your terminal:
+<pre>
+<code>
+terraform apply -auto-approve
+</code>
+</pre>
+Wait for the whole process to complete. Note, this could take up to 15 minutes.
+</li>
+
+<li>
+<b>Retrieve your ALB DNS endpoint</b>: To view your website, retrive your ALB endpoint using the AWS CLI:
+<pre>
+<code>
+echo "http://$(aws elbv2 describe-load-balancers --query 'LoadBalancers[?Scheme==`internet-facing`].DNSName' --output text)"
+</code>
+</pre>
+Copy the url and paste it into your browser and it should bring up your Ritual Roast Website.
+</li>
+<li>
+<b>Terminate the project</b>: When you're done to destroy the project run the following in your terminal:
+<pre>
+<code>
+terraform destroy -auto-approve
+</code>
+</pre>
+That will proceed termination of all the resources deployed using terraform. Be patient and let it finish naturally.
+</li>
+
+</ol>
+<strong>Note, deploying the above will incur a minor cost i.e. if you kept it running the whole day it will cost around `50p` or less. But running it for a half hour will cost much less.</strong>
 
 </p>
 
