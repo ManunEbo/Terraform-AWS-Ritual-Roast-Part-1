@@ -440,7 +440,7 @@ side by side with the old ASG
 
 <p>
 Target tracking allows the infrastructure to smooth out spikes in traffic without over-provisioning and wasting money. This process is facilitated by communication between ALB, CloudWatch and ASG. Setting the target tracking to 50.0 is the middle ground, perhaps not optimal. However, for the purpose of this demonstration, it is satisfactory.
-</p>
+
 <pre>
 <code>
   target_tracking_configuration {
@@ -453,7 +453,7 @@ Target tracking allows the infrastructure to smooth out spikes in traffic withou
   }
 </code>
 </pre>
-
+</p>
 <p>
 When traffic increases, the following happen:
 
