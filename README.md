@@ -1,5 +1,5 @@
 <h1>Ritual Roast: Automated 3-Tier AWS Architecture</h1>
-<h2>1. 🏞️ Background</h2>
+<h1>1. 🏞️ Background</h1>
 <p>
 Ritual Roast is a fictitious company embarking on an advertising campaign to engage with their customers<br>
 by hosting a recipe competition where customers complete the online form with their recipe and contact details.<br>
@@ -7,7 +7,7 @@ The chefs will try the recipe and decide the winner to receive a prize.<br>
 The company aims to build a mailing list from the emails for future campaigns.
 </p>
 
-<h2>2.💡 Project Evolution & Motivation</h2>
+<h1>2.💡 Project Evolution & Motivation</h1>
 <p>
 The project is based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
 The original course consists of manual infrastructure deployment via the AWS Management Console.<br>
@@ -15,7 +15,7 @@ This project converts that into a sophisticated Infrastructure as code (IAC) dep
 In implementing this project I demonstrate my skills and ability to turn complex architectures<br>
 into practical production worthy solutions.
 
-<h2>3. 🗺️ High-Level Design (HLD)</h2>
+<h1>3. 🗺️ High-Level Design (HLD)</h1>
 <p>
 The diagram below is the schematics for Ritual Roast, provided in the course.<br>
 This along with the "Ritual Roast Resource Configuration.pdf" document provide the road map<br> for this Terraform implementation. I've also included the python script "ritual-roast.py" script, for completeness.
@@ -36,7 +36,7 @@ The Data tier is home to the RDS MySQL database with Multi-AZ failover. The data
 There is a separate role to enable communication between the EC2 instances, the application, and the database.
 </p>
 
-<h2>4. 🌐 Networking</h2>
+<h1>4. 🌐 Networking</h1>
 
 <p>
 This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" <br>all the resources used in this project are deployed under the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>.<br>
@@ -47,7 +47,7 @@ The configuration specification for this project can be found at <a href="./docu
  and availability zones for each Tier, in additions to other resource parameter settings.<br>
 
 
-<h2>5. 🔒 Security</h2>
+<h1>5. 🔒 Security</h1>
 <p>
 <b>Summary</b>: The security groups apply the principle of least privilege. They tightly restrict traffic<br>
 (e.g., the DB only talks to the Web tier and Lambda secrets rotation function).<br>
@@ -129,7 +129,7 @@ the internet via the NAT gateway it cannot be reached from the outside.
 
 </ul>
 
-<h3>Secrets Manager</h3>
+<h2>Secrets Manager</h2>
 <p>
 Secrets Manager is preferred over other methods credential management<br>
 for the following reasons:
@@ -676,10 +676,8 @@ The bucket has versioning enabled facilitating the flexibility to roll back faul
 </p>
 
 <h3>Application repository</h3>
--> S3
-    -> python scrip for flask app
-<p>
 
+<p>
 The source code for the flask application is bundled up and uploaded to this bucket. This decouples the source<br>
 code from the project infrastructure enabling greater flexibility for pushing changes.<br>
 All instances created by the ASG will pull code from this bucket. This means all the instances will have the<br> latest code, at the point of creation. Thus identical, with the exception of new updates.<br>
@@ -695,16 +693,15 @@ To refresh the instances so they have the latest updates we can run the followin
 </pre>
 
 <p>
-The aws cli is used above instead of Terraform because no changes have been made to the ASG or Launch template<br>
-meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy<br>
-and replace the instances one by one pulling the freshly updated source code in the process.<br>
+The aws cli is used above instead of Terraform because no changes have been made to the ASG or Launch template
+meaning "tf plan" will show no changes to be made. However, forcing an instance refresh will destroy and replace the instances one by one pulling the freshly updated source code in the process.
 Note, the instances use roles with s3 bucket access policy to sync with s3, at boot.
 </p>
 
 <h3>Flask App (ritual-roast.py)</h3>
 <p>
-This single script is the infrastructure aware central nervous system of the project.<br>
-It is the intersection betweeen the python backend and the Flask frontend web server<br>
+This single script, <a href="./documents/ritual-roast.py">ritual-roast.py</a> is the infrastructure aware central nervous system of the project. It is the intersection betweeen the python backend and the Flask frontend web server.
+
 It does the following:
 <ol>
 <li>
@@ -712,31 +709,31 @@ The <b>template_folder</b> is where Flask looks for <b>index.html</b>, the entry
 </li>
 
 <li>
-The <b>static_folder</b> is where the .css, .js and the images are found<br>
+The <b>static_folder</b> is where the .css, .js and the images are found
 This stylizes and animates the website 
 </li>
 
 <li>
-The <b>CORS</b> (Cross Origin Resourse Sharing) here tells the browser<br>
-This is an open API. However, in production the domain name would be used in place of "*"<br>
-<code>CORS(app, resources={r"/*": {"origins": "*"}})</code><br>
+The <b>CORS</b> (Cross Origin Resourse Sharing) here tells the browser.
+This is an open API. However, in production the domain name would be used in place of "*"
+<pre>
+<code>
+CORS(app, resources={r"/*": {"origins": "*"}})
+</code>
+</pre>
 But here it assists the ALB by preventing the browser muting the API response.
 </li>
 
 <li>
-The script interacts with AWS via boto3 to pull DB credentials<br>
-from Secrets Manager
+The script interacts with AWS via boto3 to pull DB credentials from Secrets Manager
 </li>
 
 <li>
-These credentials are then used in conjuction with an ssl certificate<br>
-to encrypt and securely connect to the DB in a <b>Zero Trust</b> fashion<br>
-i.e. we assume a breach even in a private VPC so we lock down everything.
+These credentials are then used in conjuction with an ssl certificate to encrypt and securely connect to the DB in a <b>Zero Trust</b> fashion i.e. we assume a breach even in a private VPC so we lock down everything.
 </li>
 
 <li>
-The DB connection function completes with a create table query,<br>
-if the table does not yet exist. 
+The DB connection function completes with a create table query, if the table does not yet exist. 
 </li>
 
 <li>
@@ -752,56 +749,71 @@ The <b>add_recipe</b> function sends a new recipe to the database
 </li>
 
 <li>
-The <b>health_check</b> function is the liveness probe that the ALB<br>
-sends HTTP get requests to ensure that the EC2 instance is healthy<br>
-i.e. when the ALB probes <b>/health</b> the EC2 instance runs this function<br>
-and sends the response back to the ALB.
+The <b>health_check</b> function is the liveness probe that the ALB sends HTTP get requests to ensure that the EC2 instance is healthy i.e. when the ALB probes <b>/health</b> the EC2 instance runs this function and sends the response back to the ALB.
 </li>
 
 <li>
-The <b>serve</b> function is the traffic controller linking the incoming URL request (the path)<br>
-to the physical file on the webserver. <b>If the path exists</b>, it delivers the contents<br>
-else it returns what ever is setup for the 404 NOT FOUND.
+The <b>serve</b> function is the traffic controller linking the incoming URL request (the path) to the physical file on the webserver. <b>If the path exists</b>, it delivers the contents else it returns what ever is setup for the 404 NOT FOUND.
 </li>
 
 <li>
-Finally, the `__main__` block acts as a startup gatekeeper.<br>
-It forces the app to verify the database connection before it tries to host the website.<br>
-If the database is missing, the script kills itself on purpose with a `sys.exit(1)`.<br>
-This is a deliberate "Fail-Fast" move: it prevents the server from sitting there broken<br>
-and tells the OS (Systemd) to keep rebooting the app until the database finally wakes up.
+Finally, the `__main__` block acts as a startup gatekeeper. It forces the app to verify the database connection before it tries to host the website. If the database is missing, the script kills itself on purpose with a `sys.exit(1)`. This is a deliberate "Fail-Fast" move: it prevents the server from sitting there broken and tells the OS (Systemd) to keep rebooting the app until the database finally wakes up.
 </li>
-
 </ol>
-
 </p>
 
-<h3>AWS Lambda for rotaing secrets Python code</h3>
+<h3>Terraform backend</h3>
+<p>
+The terraform state file `tf.state` is essentially a copy of the current configuration of our resources managed by this terraform project. The state file should be stored remotely to facilitate collaboration. The remote location(backend) should be secure and encrypted yet accessible to all collaborators with the right security credentials.
+In this project an S3 bucket is used as the remote backend.
+
+Once all collaborators have access to the bucket, it is necessary to prevent multiple collaborators pushing changes simultaneously, which would overwrite the previous change without notice. To avoid this, a state lock file is used, `use_lockfile = true`. This ensures that only a single collaborator can apply/push configuration changes to our infrastructure at a time. While they make those changes the state file is locked and others are prevented from doing so. When they finish, the state lock is released enabling others to see the changes by running `terraform plan` and to push their changes to the project with `terraform apply`.
+The backend configuration loooks like:
+<pre><code>
+  backend "s3" {
+    bucket       = "rr-capstone-5b160b287a99a6d9"
+    key          = "state/terraform.tfstate"
+    region       = "eu-west-2"
+    encrypt      = true
+    use_lockfile = true
+  }
+</code></pre>
+
+With respect to the providers and version constrains, the following is used:
+<ul>
+<li>
+<b>Required Version (1.14.3)</b>: This strictly pins the Terraform CLI version preventing "Version Drift", where a team member using a newer or older version of Terraform might introduce syntax that is incompatible with the rest of the team.
+</li>
+
+<li>
+<b>AWS Provider (~> 6.38.0)</b>: The pessimistic constraint operator (~>) allows Terraform to pull in minor updates and security patches for the AWS provider while blocking major version jumps that could introduce breaking changes to resources like RDS or EC2.
+</li>
+</ul>
+</p>
+
+<h2>AWS Lambda for rotaing secrets Python code</h2>
 
 <p>
-This script breaks down the secrets rotation process into functions that perform specific tasks:<br>
+This script breaks down the secrets rotation process into functions that perform specific tasks:
 <ul>
 <li>`createSecret`, Generate a new password</li>
 <li>`setSecret`, Change the password on the database</li>
 <li>`testSecret`, test connection using new password</li>
 <li>`finishSecret`, update the secret credentials to the new password</li>
 </ul>
-The various components are then invoked as per usecase via the handler function, the switchboard.<br>
+The various components are then invoked as per usecase via the handler function, the switchboard.
+
 Below are brief summaries of each component:
 
 <ol>
 <li>
-<b>Python Logging module</b> links the lambda function to CloudWatch Logs<br>
-i.e. this sends metrics, error logs in this case, that aids debugging failures.<br>
-Note, the log level has been set to `INFO` which reports general,<br>
-no debugging noise, outputs and errors.<br>
-`logger = logging.getLogger()`<br>`logger.setLevel(logging.INFO)`
+<b>Python Logging module</b> links the lambda function to CloudWatch Logs i.e. this sends metrics, error logs in this case, that aids debugging failures. Note, the log level has been set to `INFO` which reports general,
+no debugging noise, outputs and errors. `logger = logging.getLogger()` and `logger.setLevel(logging.INFO)`
 </li>
 
 
 <li>
-`generate_random_password`: This function generates a new 16 character<br>
-strong password that will replace the current secret.
+`generate_random_password`: This function generates a new 16 character  strong password that will replace the current secret.
 </li>
 
 <li>
@@ -1388,7 +1400,7 @@ This ensures the database is unreachable from the public internet and is only ac
 
 </p>
 
-<h1>7. 🛠️ Tech Stack</h1>
+<h1>8. 🛠️ Tech Stack</h1>
 
 <table>
   <tr>
