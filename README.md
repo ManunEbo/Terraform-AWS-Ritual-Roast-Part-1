@@ -1365,7 +1365,21 @@ terraform plan
 </code>
 </pre>
 </li>
-
+<li>
+<b>Invalid value for AMI Error</b>: AWS changes the AMI frequently, if you get this error then replace the value in <b>on terraform.tfvars line 86:</b> with the value specified in the data source.
+<pre>
+<code>
+data.aws_ami.amazon_linux_2023.id is "ami-0685f8dd865c8e389"
+</code>
+</pre>
+now reruning:
+<pre>
+<code>
+terraform plan
+</code>
+</pre>
+will work fine.
+</li>
 <li>
 <b>Apply the changes</b>: If you are happy with the changes run the following in your terminal:
 <pre>
