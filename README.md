@@ -677,7 +677,7 @@ With respect to the providers and version constrains, the following is used:
 </ul>
 </p>
 
-<h2>AWS Lambda for rotaing secrets Python code</h2>
+<h2>AWS Lambda for rotating secrets Python code</h2>
 
 <p>
 This script breaks down the secrets rotation process into functions that perform specific tasks:
