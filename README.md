@@ -7,7 +7,7 @@ The chefs will try the recipe and decide the winner to receive a prize. The comp
 
 <h1>2.💡 Project Evolution & Motivation</h1>
 <p>
-This is the first of a three part series of projects based on Ritual Roast. The projects are based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.<br>
+This is the first of a three part series of projects based on Ritual Roast. The projects are based on the architectural  concepts from the <a href="https://www.udemy.com/course/aws-solutions-architect-capstone-projects/">AWS Solutions Architect SAA-C03 – Hands-On Projects</a> course on Udemy.
 The original course consists of manual infrastructure deployments via the AWS Management Console. These projects convert that into a sophisticated Infrastructure as code (IaC) deployment using <strong>Terraform</strong>. In implementing this project I demonstrate my skills and ability to turn complex architectures into practical production worthy solutions.
 
 This document is intended to be both technical and educational to bridge the gap for those new to IaC.
@@ -20,7 +20,7 @@ The diagram below is the schematics for Ritual Roast, provided in the course. Th
 
 <p>
 The HLD illustrates the 3-Tier Architecture with the <b>DMZ</b> presentation Tier, <b>Web/App</b> Application Tier and <b>Data</b> the Data Tier. The presentation Tier consists of a LoadBalancer that accept traffic from the internet and Loadbalances it to the Aplication Tier's Auto Scaling Group(ASG), highly available and resilient, EC2 instances in the Web/App private subnets. The instances pull source codes from an S3 to build the application.
-<br>The application processes packets and communicates to and fro with the Data tier.
+The application processes packets and communicates to and fro with the Data tier.
 
 Communication between resources is enabled via security groups i.e. only resources with the right security group attached can communicate vice versa. Security is further enhanced by preventing exposure to the internet for resources in private subnets. The Data tier is home to the RDS MySQL database with Multi-AZ failover. The database credentials are stored and rotated by Secrets Manager with the help of a lambda function which has a role to facilitate communication.
 There is a separate role to enable communication between the EC2 instances, the application, and the database.
@@ -78,7 +78,8 @@ A separate route table is created for public resources to access the internet vi
 <ol>
 <li>ingress rule that accepts traffic from LoadBalancer-SG on port 5000</li>
 <li>egress rule that allows communication to any protocol to any ip</li>
-<li>Note these instances are on a private subnet using NAT gateway for outbound communication to the internet <br>thus security is not compromised.
+<li>
+Note these instances are on a private subnet using NAT gateway for outbound communication to the internet thus security is not compromised.
 </li>
 <li>Since security groups are stateful, it will redirect packets back to LoadBalancer-SG without explicitly defining an egress rule for that</li>
 <li>The single egress rule, enables communication with Database-SG</li>
@@ -253,7 +254,6 @@ Ritual Roast requires 16 subnets or sub networks from the VPC CIDR <strong>(10.1
     <td>2^(32-23) = 2^09 = 512</td>
   </tr>
 </table>
-<br>
 
 <p>
 Of the 16 subnets required by Ritual Roast, 4 are reserved for possible future AZ in <b>eu-west-2</b>. The remaining 12 subnets are broken down into 4 groups:
@@ -377,7 +377,7 @@ Updating the Launch template will lead to AWS throwing an error regarding the AS
 <li>To prevent application down time</li>
 <li>It attempts to create the <b>new</b> ASG with the <b>new</b> template before destroying the old ASG
 </li>
-<li>AWS throws an error:<br>
+<li>AWS throws an error:
 <i><b>"AutoScalingGroup with name 'rr-asg' already exists."</b></i>
 </li>
 <li>Forcing Terraform to delete the old one first using <i><b>"lifecycle { create_before_destroy = false }"</b></i> Would create a different problem.
@@ -388,11 +388,10 @@ Updating the Launch template will lead to AWS throwing an error regarding the AS
 
 </ol>
 
-<br>
-The solution:
+<b>The solution</b>:
 We bypass the above problems by injecting some random hex characters into the ASG name
 using the latest launch template version:
-<br>
+
 </p>
 
 <pre>
@@ -478,7 +477,6 @@ After the 3 minutes, the instance(s) are ready to receive traffic. The ALB regis
 </li>
 </ol>
 
-<br>
 When traffic drops, the following happen:
 
 <ol>
@@ -538,7 +536,7 @@ Without the above sequence, Terraform would do the following:
 </li>
 <li>AWS RDS takes 5 to 13 minutes to fully provision</li>
 <li>While the ASG will spin up EC2 instances in a few minutes</li>
-<li>The instances will attempt to connect to the database<br>
+<li>The instances will attempt to connect to the database
 with incorrect host value i.e. the "PLACEHOLDER"
 </li>
 <li>The database is unvailable as its still provisioning</li>
