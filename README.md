@@ -532,9 +532,9 @@ Once the database is created, the secret storing database credentials is updated
 </li>
 </ol>
 
-Without the above sequence
+Without the above sequence, Terraform would do the following:
 <ol>
-<li>Terraform would create ASG and RDS instances in parralel to save time.
+<li>Create ASG and RDS instances in parralel to save time.
 </li>
 <li>AWS RDS takes 5 to 13 minutes to fully provision</li>
 <li>While the ASG will spin up EC2 instances in a few minutes</li>
@@ -643,17 +643,17 @@ The <b>serve</b> function is the traffic controller linking the incoming URL req
 </li>
 
 <li>
-Finally, the `__main__` block acts as a startup gatekeeper. It forces the app to verify the database connection before it tries to host the website. If the database is missing, the script kills itself on purpose with a `sys.exit(1)`. This is a deliberate "Fail-Fast" move: it prevents the server from sitting there broken and tells the OS (Systemd) to keep rebooting the app until the database finally wakes up.
+Finally, the <b>__main__</b> block acts as a startup gatekeeper. It forces the app to verify the database connection before it tries to host the website. If the database is missing, the script kills itself on purpose with a <b>sys.exit(1)</b>. This is a deliberate "Fail-Fast" move: it prevents the server from sitting there broken and tells the OS (Systemd) to keep rebooting the app until the database finally wakes up.
 </li>
 </ol>
 </p>
 
 <h3>Terraform remote backend</h3>
 <p>
-The terraform state file `tf.state` is essentially a copy of the current configuration of our resources managed by this terraform project. The state file should be stored remotely to facilitate collaboration. The remote location(backend) should be secure and encrypted yet accessible to all collaborators with the right security credentials.
+The terraform state file <b>tf.state</b> is essentially a copy of the current configuration of our resources managed by this terraform project. The state file should be stored remotely to facilitate collaboration. The remote location(backend) should be secure and encrypted yet accessible to all collaborators with the right security credentials.
 In this project an S3 bucket is used as the remote backend.
 
-Once all collaborators have access to the bucket, it is necessary to prevent multiple collaborators pushing changes simultaneously, which would overwrite the previous change without notice. To avoid this, a state lock file is used, `use_lockfile = true`. This ensures that only a single collaborator can apply/push configuration changes to our infrastructure at a time. While they make those changes the state file is locked and others are prevented from doing so. When they finish, the state lock is released enabling others to see the changes by running `terraform plan` and to push their changes to the project with `terraform apply`.
+Once all collaborators have access to the bucket, it is necessary to prevent multiple collaborators pushing changes simultaneously, which would overwrite the previous change without notice. To avoid this, a state lock file is used, <b>use_lockfile = true</b>. This ensures that only a single collaborator can apply/push configuration changes to our infrastructure at a time. While they make those changes the state file is locked and others are prevented from doing so. When they finish, the state lock is released enabling others to see the changes by running <b>terraform plan</b> and to push their changes to the project with <b>terraform apply</b>.
 The backend configuration loooks like:
 <pre>
 <code>
@@ -684,10 +684,10 @@ With respect to the providers and version constrains, the following is used:
 <p>
 This script breaks down the secrets rotation process into functions that perform specific tasks:
 <ul>
-<li>`createSecret`, Generate a new password</li>
-<li>`setSecret`, Change the password on the database</li>
-<li>`testSecret`, test connection using new password</li>
-<li>`finishSecret`, update the secret credentials to the new password</li>
+<li><b>createSecret</b>, Generate a new password</li>
+<li><b>setSecret</b>, Change the password on the database</li>
+<li><b>testSecret</b>, test connection using new password</li>
+<li><b>finishSecret</b>, update the secret credentials to the new password</li>
 </ul>
 The various components are then invoked as per usecase via the handler function, the switchboard.
 
@@ -695,43 +695,43 @@ Below are brief summaries of each component:
 
 <ol>
 <li>
-<b>Python Logging module</b> links the lambda function to CloudWatch Logs i.e. this sends metrics, error logs in this case, that aids debugging failures. Note, the log level has been set to `INFO` which reports general, no debugging noise, outputs and errors. `logger = logging.getLogger()` and `logger.setLevel(logging.INFO)`
+<b>Python Logging module</b> links the lambda function to CloudWatch Logs i.e. this sends metrics, error logs in this case, that aids debugging failures. Note, the log level has been set to <b>INFO</b> which reports general, no debugging noise, outputs and errors. <b>logger = logging.getLogger()</b> and <b>logger.setLevel(logging.INFO)</b>
 </li>
 
 
 <li>
-`generate_random_password`: This function generates a new 16 character  strong password that will replace the current secret.
+<b>generate_random_password</b>: This function generates a new 16 character  strong password that will replace the current secret.
 </li>
 
 <li>
-`get_secret_dict`: This function retrieves and parses the secret in json format ready to be consumed by other functions. The use of token identifies and locks in the specific version of the secret, `VersionId`, for the tasks at hand. In additions, `VersionStage` allows the lambda function to work with both the old `AWSCURRENT` and the new `AWSPENDING` passwords i.e. to change the password, lambda needs to first authenticate using the current password and then reset the password to the new one.
+<b>get_secret_dict</b>: This function retrieves and parses the secret in json format ready to be consumed by other functions. The use of token identifies and locks in the specific version of the secret, <b>VersionId</b>, for the tasks at hand. In additions, <b>VersionStage</b> allows the lambda function to work with both the old <b>AWSCURRENT</b> and the new <b>AWSPENDING</b> passwords i.e. to change the password, lambda needs to first authenticate using the current password and then reset the password to the new one.
 </li>
 
 <li>
-`create_secret`: This function performs the following:
+<b>create_secret</b>: This function performs the following:
 <ul>
-<li>Retrieves the secret, in json format dictionary, with `VersionStages` set as `AWSCURRENT`</li>
-<li>Invokes the `generate_random_password` function to create a new password</li>
-<li>Replacing the <b>dictionary's</b> `AWSCURRENT` password inplace</li>
+<li>Retrieves the secret, in json format dictionary, with <b>VersionStages</b> set as <b>AWSCURRENT</b></li>
+<li>Invokes the <b>generate_random_password</b> function to create a new password</li>
+<li>Replacing the <b>dictionary's AWSCURRENT</b> password inplace</li>
 <li>
-Pushes the change back to Secrets Manager tagging it with `VersionStages` equal to `AWSPENDING`
+Pushes the change back to Secrets Manager tagging it with <b>VersionStages</b> equal to <b>AWSPENDING</b>
 </li>
 <li>
 This ensures that we don't overwrite the current password by mistake before the change over.
 </li>
 <li>
-The push is ignored if a secret with `VersionStages` equal to `AWSPENDING` already exists. 
+The push is ignored if a secret with <b>VersionStages</b> equal to <b>AWSPENDING</b> already exists. 
 </li>
 </ul>
 </li>
 
 <li>
-`set_secret`: This function is the only point of contact with the database. It performs the following tasks:
+<b>set_secret</b>: This function is the only point of contact with the database. It performs the following tasks:
 <ol>
-<li>Retrieves both the current password `AWSCURRENT` and the new password `AWSPENDING` </li>
+<li>Retrieves both the current password <b>AWSCURRENT</b> and the new password <b>AWSPENDING</b></li>
 <li>Connects to the database using the current password</li>
 <li>
-Executes an `ALTER USER` command to change the password to the new password.
+Executes an <b>ALTER USER</b> command to change the password to the new password.
 <pre>
 <code>
   with conn.cursor() as cursor:
@@ -760,10 +760,10 @@ If something goes wrong, the error is handled with the exception which logs the 
 </li>
 
 <li>
-`test_secret`: This function proves that the password update was a success. It performs the following tasks:
+<b>test_secret</b>: This function proves that the password update was a success. It performs the following tasks:
 <ol>
 <li>
-Tests connection to the database with the newly updated password. That's the password labeled as `AWSPENDING`
+Tests connection to the database with the newly updated password. That's the password labeled as <b>AWSPENDING</b>
 </li>
 <li>If the connection is successful it closes the connection.</li>
 <li>
@@ -783,32 +783,32 @@ except Exception as e:
 </li>
 
 <li>
-`finish_secret`: This function updates the secret in Secrets Manager. It performs the following tasks:
+<b>finish_secret</b>: This function updates the secret in Secrets Manager. It performs the following tasks:
 <ol>
 <li>Retrieves the secret from Secrets Manager</li>
 
 <li>
-Verifies that the secret hasn't already been updated (swapped) by checking that the version id of `AWSCURRENT` doesn't match the token, the id on `AWSPENDING` password, if it does then it skip this step and exits.
+Verifies that the secret hasn't already been updated (swapped) by checking that the version id of <b>AWSCURRENT</b> doesn't match the token, the id on <b>AWSPENDING</b> password, if it does then it skip this step and exits.
 </li>
 
 <li>
-If the secret hasn't been swapped yet then remove the version id from `current_version` and move the version id to ``token` which would update the value held in `AWSCURRENT` to the value in `AWSPENDING`. This is called an "atomic swap".
+If the secret hasn't been swapped yet then remove the version id from <b>current_version</b> and move the version id to <b>token</b> which would update the value held in <b>AWSCURRENT</b> to the value in <b>AWSPENDING</b>. This is called an <b>"atomic swap"</b>.
 </li>
 </ol>
 </li>
 
 <li>
-`lambda_handler`: This function is the central nervous system of the operation, responsible for managing the secrets lifecycle from start to finish. It performs the following tasks:
+<b>lambda_handler</b>: This function is the central nervous system of the operation, responsible for managing the secrets lifecycle from start to finish. It performs the following tasks:
 <ol>
 <li>
 Secret manager invokes this function, passing to it two arguments:
 <ol>
 <li>
-<b>event</b>: A dictionary containing 4 key values: SecretId, ClientRequestToken, Step, and RotationToken Note, the step is the current phase of the rotation one of; `createSecret`, `setSecret`, `testSecret`, or `finishSecret`
+<b>event</b>: A dictionary containing 4 key values: SecretId, ClientRequestToken, Step, and RotationToken Note, the step is the current phase of the rotation one of; <b>createSecret</b>, <b>setSecret</b>, <b>testSecret</b>, or <b>finishSecret</b>
 </li>
 
 <li>
-<b>context</b>: This provides metadata regarding the execution environment such as `aws_request_id`.
+<b>context</b>: This provides metadata regarding the execution environment such as <b>aws_request_id</b>.
 </li>
 </ol>
 </li>
@@ -817,17 +817,17 @@ Secret manager invokes this function, passing to it two arguments:
 The function extracts the key values from the event into variables for later use.
 </li>
 <li>
-The function verifies that the rotation is enabled `RotationEnabled` by retrieving the metadata with `describe_secret`. Note, if rotation is <b>not</b> enabled, the error is logged, and this will raise a `ValueError` which terminates the execution and reports a failure metric to CloudWatch.
+The function verifies that the rotation is enabled <b>RotationEnabled</b> by retrieving the metadata with <b>describe_secret</b>. Note, if rotation is <b>not</b> enabled, the error is logged, and this will raise a <b>ValueError</b> which terminates the execution and reports a failure metric to CloudWatch.
 </li>
 <li>
-Once `RotationEnabled` is verified execution of the rotation functions begin, conditional on the phase, `step` value, retrieved from the event.
+Once <b>RotationEnabled</b> is verified execution of the rotation functions begin, conditional on the phase, <b>step</b> value, retrieved from the event.
 </li>
 
 <li>
 Thus Secrets Manager invokes this function 4 times each time with a different value for phase.
 </li>
 <li>
-If an invalid value is passed into `step` then the error is logged and a `ValueError` is raised. once again terminating the execution and reporting the failure to CloudWatch.
+If an invalid value is passed into <b>step</b> then the error is logged and a <b>ValueError</b> is raised. once again terminating the execution and reporting the failure to CloudWatch.
 </li>
 
 </ol>
@@ -838,7 +838,7 @@ If an invalid value is passed into `step` then the error is logged and a `ValueE
 </p>
 
 <h2>IAM Roles</h2>
-<h3>Lambda secrets rotation role `lambda_secrets_role`</h3>
+<h3>Lambda secrets rotation role <b>lambda_secrets_role</b></h3>
 
 <p>
 The role is an aggregation of permissions that allow the function to communicate with AWS services for the successfull execution of secrets rotation. The lambda function assumes the role when it is invoked by Secrets Manager.
@@ -868,7 +868,7 @@ resource "aws_iam_role" "lambda_secrets_role" {
 Following the principle of least privileges, the following permissions are attached to the role:
 <ul>
 <li>
-`lambda_vpc_access`: This policy attachment pulls in an AWS managed policy `AWSLambdaVPCAccessExecutionRole`
+<b>lambda_vpc_access</b>: This policy attachment pulls in an AWS managed policy <b>AWSLambdaVPCAccessExecutionRole</b>
 <pre>
 <code>
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
@@ -879,15 +879,15 @@ which facilitates a number of actions required for the lambda function:
 <ol>
 
 <li>
-`ec2:CreateNetworkInterface`: Allows the lambda function to create <b>Elastic Network Interfaces(ENI)</b> inside the private subnets. This is how it is able to find and communicate with the database i.e. it gives the lambda function footing in the database subnets. Note the lambda function can reside in another subnet that has access to the database subnets.
+<b>ec2:CreateNetworkInterface</b>: Allows the lambda function to create <b>Elastic Network Interfaces(ENI)</b> inside the private subnets. This is how it is able to find and communicate with the database i.e. it gives the lambda function footing in the database subnets. Note the lambda function can reside in another subnet that has access to the database subnets.
 </li>
 
 <li>
-<b>View Network Topology</b>: a combination of these actions; `ec2:DescribeNetworkInterfaces`, `ec2:DescribeSubnets`,`ec2:DescribeSecurityGroups`, allow the lambda function to look around the network essentially finding it's path to the database.
+<b>View Network Topology</b>: a combination of these actions; <b>ec2:DescribeNetworkInterfaces</b>, <b>ec2:DescribeSubnets</b>, <b>ec2:DescribeSecurityGroups</b>, allow the lambda function to look around the network essentially finding it's path to the database.
 </li>
 
 <li>
-`ec2:DeleteNetworkInterface`: Because lambda functions are ephemeral, when it has completed the rotation tasks it needs to delete the <b>ENIs</b> that were created to eliminate left over/orphaned resources costs.
+<b>ec2:DeleteNetworkInterface</b>: Because lambda functions are ephemeral, when it has completed the rotation tasks it needs to delete the <b>ENIs</b> that were created to eliminate left over/orphaned resources costs.
 
 </li>
 
@@ -895,8 +895,8 @@ which facilitates a number of actions required for the lambda function:
 </li>
 
 <li>
-  `lambda_basic_execution`: This policy attachment allows the Lambda function to <b>tell its story</b>. 
-  It pulls in the AWS managed policy `AWSLambdaBasicExecutionRole`:
+  <b>lambda_basic_execution</b>: This policy attachment allows the Lambda function to <b>tell its story</b>. 
+  It pulls in the AWS managed policy <b>AWSLambdaBasicExecutionRole</b>:
   <pre>
   <code>
     policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -918,7 +918,7 @@ which facilitates a number of actions required for the lambda function:
 </li>
 
 <li>
-<strong><code>rr_lambda_secrets_custom_policy</code></strong>: This is a surgical, "Least Privilege" userdefined  policy that gives the Lambda function the exact tools it needs to rotate credentials without exposing the rest of the AWS account. These tools are the actions that can be performed on restricted secrets resources that match this prefix `secret:rr-db-secret-*` in the name.
+<strong><code>rr_lambda_secrets_custom_policy</code></strong>: This is a surgical, "Least Privilege" userdefined  policy that gives the Lambda function the exact tools it needs to rotate credentials without exposing the rest of the AWS account. These tools are the actions that can be performed on restricted secrets resources that match this prefix <b>secret:rr-db-secret-*</b> in the name.
 <pre> 
 <code>
   Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
@@ -927,16 +927,16 @@ which facilitates a number of actions required for the lambda function:
 
 The actions include:
 <ul>
-<li>`secretsmanager:GetSecretValue`: Retrieves the current "locked" credentials.</li>
-<li>`secretsmanager:DescribeSecret`: Obtains metadata (e.g., rotation status) to ensure the logic is in sync.</li>
-<li>`secretsmanager:PutSecretValue`: Allows lambda to create a new secret/password</li>
-<li>`secretsmanager:UpdateSecret`: Allows lambda to update the secret value</li>
+<li><b>secretsmanager:GetSecretValue</b>: Retrieves the current "locked" credentials.</li>
+<li><b>secretsmanager:DescribeSecret</b>: Obtains metadata (e.g., rotation status) to ensure the logic is in sync.</li>
+<li><b>secretsmanager:PutSecretValue</b>: Allows lambda to create a new secret/password</li>
+<li><b>secretsmanager:UpdateSecret</b>: Allows lambda to update the secret value</li>
 </ul>
 
 The policy also permits the role to send metrics to AWS CloudWatch. Note, this is for numerical data that is used
 in Dashboards and graphs. This is accomplished using the following action:
 <ul>
-<li>`cloudwatch:PutMetricData`: Allows lambda to write numerical data to CloudWatch Metrics</li>
+<li><b>cloudwatch:PutMetricData</b>: Allows lambda to write numerical data to CloudWatch Metrics</li>
 </ul>
 </li>
 </ul>
@@ -956,7 +956,7 @@ resource "aws_lambda_permission" "rr_allow_secretsmanager_to_call_lambda" {
 </pre>
 </p>
 
-<h3>EC2 access to S3 and secrets role `rr_ec2_s3_secret_role`</h3>
+<h3>EC2 access to S3 and secrets role <b>rr_ec2_s3_secret_role</b></h3>
 
 <p>
 This role enables the EC2 instances created by the ASG to securely perform the following tasks:
@@ -972,7 +972,8 @@ This role enables the EC2 instances created by the ASG to securely perform the f
 </code>
 </pre>
 </li>
-<li>Communicate with Secrets Manager to retrieve database credentials. Note, it's also explicitly specified which secret this applies to:
+<li>
+Communicate with Secrets Manager to retrieve database credentials. Note, it's also explicitly specified which secret this applies to:
 <pre>
 <code>
   Resource = "${aws_secretsmanager_secret.db_secret.arn}"
@@ -985,27 +986,27 @@ i.e. instead of being locked into one version, which would break the application
 <li>
 Communicate with AWS Systems Manager (SSM)
 
-The communication with S3 and Secrets Manager are enabled by the `rr_ec2_s3_secret_policy` policy actions.
+The communication with S3 and Secrets Manager are enabled by the <b>rr_ec2_s3_secret_policy</b> policy actions.
 Here is a breakdown of these actions:
 <ul>
 
 <li>
-`s3:GetObject`: Allow instances to retrieve objects from S3.
+<b>s3:GetObject</b>: Allow instances to retrieve objects from S3.
 </li>
 
 <li>
-`s3:ListBucket`: Allows the instances to see the contents of the S3 bucket.
+<b>s3:ListBucket</b>: Allows the instances to see the contents of the S3 bucket.
 </li>
 
 <li>
-`secretsmanager:GetSecretValue`: Allows the instances to retrieve the secrets value i.e. the DB credentials
+<b>secretsmanager:GetSecretValue</b>: Allows the instances to retrieve the secrets value i.e. the DB credentials
 from Secrets Manager.
 </li>
 </ul>
 </li>
 </ol>
 
-The communication with <b>SSM</b> is enabled by attaching `AmazonSSMManagedInstanceCore` policy to the role.
+The communication with <b>SSM</b> is enabled by attaching <b>AmazonSSMManagedInstanceCore</b> policy to the role.
 This essentially achieves the following:
 <ol>
 <li>
@@ -1021,7 +1022,7 @@ No need for Bastion hosts to play the middle man facilitating access to private 
 </li>
 
 <li>
-Audit Trail: Every command typed in an SSM session can be logged to CloudWatch or S3. Standard SSH doesn't have this kind of monitoring visibility.
+<b>Audit Trail</b>: Every command typed in an SSM session can be logged to CloudWatch or S3. Standard SSH doesn't have this kind of monitoring visibility.
 </li>
 </ol>
 
@@ -1053,7 +1054,7 @@ By linking this profile to the Auto Scaling Group's Launch Template, every new i
 <h2>Lambda Function</h2>
 
 <p>
-This lambda function `secret_rotation_function` executes the python code `index.py` to perform the necessary tasks for rotation. The following components ensure that the function is both secure and robust for the job at hand.
+This lambda function <b>secret_rotation_function</b> executes the python code <b>index.py</b> to perform the necessary tasks for rotation. The following components ensure that the function is both secure and robust for the job at hand.
 <ol>
 <li><strong>Private subnets</strong>: 
 Placing this Lambda inside the database_subnets ensures that the traffic between the Lambda and the Database never touches the public internet. It’s a private-to-private handshake.
@@ -1077,12 +1078,12 @@ using filebase64sha256 creates a unique digital signature of the file ensuring t
   source_code_hash = filebase64sha256("./index.zip")
 </code>
 </pre>
-Without this, applying any code update with `terraform apply` would do nothing. This is because terraform looks at the name index.zip and if the file name is still the same, it assumes no change.
+Without this, applying any code update with <b>terraform apply</b> would do nothing. This is because terraform looks at the name index.zip and if the file name is still the same, it assumes no change.
 </li>
 
 
 <li>
-`depends_on` Orchestration logic:
+<b>depends_on</b> Orchestration logic:
 VPC-based Lambdas require specific permissions to create Elastic Network Interfaces (ENIs) during initialization. Because AWS IAM is eventually consistent, a Lambda might attempt to boot before its permissions have fully propagated.
 <pre>
 <code>
@@ -1096,7 +1097,7 @@ depends_on acts as a sequencing gate, forcing Terraform to wait until the VPC pe
 
 
 <li>
-<b>Dedicated Networking</b> (`Lambda-SG`): The function is assigned a dedicated Security Group, allowing for granular control over outbound traffic to the RDS instance while maintaining strict isolation from the application-tier EC2s
+<b>Dedicated Networking (Lambda-SG)</b>: The function is assigned a dedicated Security Group, allowing for granular control over outbound traffic to the RDS instance while maintaining strict isolation from the application-tier EC2s
 <pre>
 <code>
 security_group_ids = [aws_security_group.Lambda-SG.id]
@@ -1124,14 +1125,14 @@ Since the secret holds the database credentials required for the EC2 instances t
 <li>host</li>
 </ul>
 
-The `host` value is only known when the database has booted. Thus attempting to create the secret without it will fail with a circular dependency error. Since the database needs the secret prior booting, this results in a conflict of interests.
+The <b>host</b> value is only known when the database has booted. Thus attempting to create the secret without it will fail with a circular dependency error. Since the database needs the secret prior booting, this results in a conflict of interests.
 <strong>We can't have the Host Address until the RDS is created, but we can't (ideally) create a fully functional Secret until we have the Host Address.</strong>
 
 Three steps were employed to resolve the conflict:
 <ol>
 
 <li>
-Initialize the secret with a placeholder for `host` value. This is the skeleton version of the secret:
+Initialize the secret with a placeholder for <b>host</b> value. This is the skeleton version of the secret:
 <pre>
 <code>
 resource "aws_secretsmanager_secret_version" "db_secret_version" {
@@ -1160,7 +1161,7 @@ By placing this data source immediately after the initial "Skeleton" version, we
 
 <li>
 Now that the database requirements are met, it can start up successfully.
-Once the RDS instance is "Available," a second `aws_secretsmanager_secret_version` resource (using a `depends_on` constraint) injects the real Database Host Address into the secret.
+Once the RDS instance is "Available," a second <b>aws_secretsmanager_secret_version</b> resource (using a <b>depends_on</b> constraint) injects the real Database Host Address into the secret.
 <pre>
 <code>
 resource "aws_secretsmanager_secret_version" "db_host_update" {
@@ -1172,19 +1173,18 @@ resource "aws_secretsmanager_secret_version" "db_host_update" {
     port     = 3306
     host     = aws_db_instance.ritual_roast_db.address
   })
-
   depends_on = [aws_db_instance.ritual_roast_db]
-
   lifecycle {
     ignore_changes = [ secret_string ]
   }
 }
 </code>
 </pre>
+
 </li>
 
 <li>
-<strong>Automating rotation with `lifecyle` block</strong>: To prevent Terraform from interfering with future password rotations, we implemented a `lifecycle { ignore_changes }` block. This ensures that once the Rotation Lambda takes over management of the credentials, Terraform will not attempt to revert the password to its initial state during subsequent infrastructure updates.
+<strong>Automating rotation with lifecyle block</strong>: To prevent Terraform from interfering with future password rotations, we implemented a <b>lifecycle { ignore_changes }</b> block. This ensures that once the Rotation Lambda takes over management of the credentials, Terraform will not attempt to revert the password to its initial state during subsequent infrastructure updates.
 
 This also prevents application downtime i.e. without the above, if Terraform resets the password to the one in the variables.tf, but the Database is already using the rotated password from the Lambda, the app crashes instantly.
 </li>
@@ -1212,18 +1212,18 @@ resource "aws_db_subnet_group" "rr_db_subnet_group" {
 </code>
 </pre>
 
-This ensures the database is unreachable from the public internet and is only accessible via the application-tier Security Group `Web-App-SG` and the lambda security group `Lambda-SG`.
+This ensures the database is unreachable from the public internet and is only accessible via the application-tier Security Group <b>Web-App-SG</b> and the lambda security group <b>Lambda-SG</b>.
 </li>
 
 <li><strong>Resilience & Performance</strong>:
 <ul>
 
 <li>
-<strong>Multi-AZ Deployment:</strong>: `multi_az` is enabled to ensure high availability. AWS automatically provisions and maintains a synchronous standby replica in a different Availability Zone, providing automatic failover in the event of an infrastructure failure.
+<strong>Multi-AZ Deployment</strong>: multi_az is enabled to ensure high availability. AWS automatically provisions and maintains a synchronous standby replica in a different Availability Zone, providing automatic failover in the event of an infrastructure failure.
 </li>
 
 <li>
-<strong>Modern Storage (`gp3`)</strong>: General Purpose SSD (gp3) storage allows for independent scaling of IOPS and throughput, providing a more predictable and cost-effective performance profile than older storage types.
+<strong>Modern Storage (gp3)</strong>: General Purpose SSD (gp3) storage allows for independent scaling of IOPS and throughput, providing a more predictable and cost-effective performance profile than older storage types.
 </li>
 </ul>
 </li>
@@ -1236,7 +1236,7 @@ This ensures the database is unreachable from the public internet and is only ac
 </li>
 
 <li>
-<strong>Rotation-Safe Lifecycle</strong>: To support automated password rotation, we implemented a `lifecycle { ignore_changes = [password] }` block. This allows the Secret Rotation Lambda to manage the database password independently of the Terraform state, preventing accidental credential reverts during future infrastructure updates.
+<strong>Rotation-Safe Lifecycle</strong>: To support automated password rotation, we implemented a <b>lifecycle { ignore_changes = [password] }</b> block. This allows the Secret Rotation Lambda to manage the database password independently of the Terraform state, preventing accidental credential reverts during future infrastructure updates.
 </li>
 </ul>
 </li>
@@ -1245,22 +1245,22 @@ This ensures the database is unreachable from the public internet and is only ac
 
 </p>
 
-<h1>Instructions</h1>
+<h1>7. 🪜 Instructions</h1>
 <p>
 To deploy this project this infrastructure, follow the steps below:
 <ol>
 <li>
-<b>Setup S3 backend</b>: In <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/terraform.tf">terraform.tf</a> change the bucket name from `rr-capstone-5b160b287a99a6d9` to your designated bucket name
+<b>Setup S3 backend</b>: In <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/terraform.tf">terraform.tf</a> change the bucket name from <b>rr-capstone-5b160b287a99a6d9</b> to your designated bucket name
 </li>
 <li>
-<b>Update the region in ritual-roast.py</b>: Go to your `ritual-roast-app` directory, under the `Flask` directory open `ritual-roast.py` and change the region to your desired region
+<b>Update the region in ritual-roast.py</b>: Go to your <b>ritual-roast-app</b> directory, under the <b>Flask</b> directory open <b>ritual-roast.py</b> and change the region to your desired region
 <pre>
 <code>
 client = session.client(service_name="secretsmanager", region_name="eu-west-2")
 </code>
 </pre>
 <b>You can obtain these files from the course.</b>
-My recommendation is to make the above change in the ritual-roast.py that I've provided and then replace the file in the `Flask` subdirectory with this one.
+My recommendation is to make the above change in the ritual-roast.py that I've provided and then replace the file in the <b>Flask</b> subdirectory with this one.
 </li>
 <li>
 <b>Source code repository on s3</b>: Ensure the source code is on the S3 Bucket that you sepecified in your backend. You can upload the source code with aws cli using:
@@ -1278,7 +1278,7 @@ aws s3 cp ./ritual-roast-app s3://your-bucket-name --recursive
 client = session.client(service_name="secretsmanager", region_name="eu-west-2")
 </code>
 </pre>
-Set `region_name="eu-west-2"` to the region that you are using.
+Set <b>region_name="eu-west-2"</b> to the region that you are using.
 </li>
 <li>
 <b>Lambda code and dependency</b>: 
@@ -1293,13 +1293,13 @@ mkdir my_rotation_dependencies
 </pre>
 </li>
 <li>
-Once you have the directory `my_rotation_dependencies` created, execute  `rotation-dependencies.sh
+Once you have the directory <b>my_rotation_dependencies</b> created, execute  <b>rotation-dependencies.sh</b>
 <pre>
 <code>
 ./rotation-dependencies.sh
 </code>
 </pre>
-Note, the commands to remove the directory `my_rotation_dependencies` afterwards are commented out. Uncomment them to do everything in one go.
+Note, the commands to remove the directory <b>my_rotation_dependencies</b> afterwards are commented out. Uncomment them to do everything in one go.
 </li>
 </ol>
 </li>
@@ -1314,7 +1314,7 @@ aws s3 cp ./index.zip s3://your-bucket-name --recursive
 </li>
 
 <li>
-<b>Update the userdata</b>: open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/autoscale.tf">autoscale.tf</a> and change the region under `userdata`
+<b>Update the userdata</b>: open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/autoscale.tf">autoscale.tf</a> and change the region under <b>userdata</b>
 
 <pre>
 <code>
@@ -1322,10 +1322,10 @@ aws s3 sync s3://${var.app_source_bucket} /home/ec2-user/myflaskapp --region eu-
 </code>
 </pre>
 
-Change `--region eu-west-2` to your desired region.
+Change <b>--region eu-west-2</b> to your desired region.
 </li>
 <li>
-<b>Update `app_source_bucket` variable</b>: Open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/variables.tf">variables.tf</a>, scroll to the bottom and change the bucket name to your bucket's name.
+<b>Update <b>app_source_bucket</b> variable</b>: Open <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/variables.tf">variables.tf</a>, scroll to the bottom and change the bucket name to your bucket's name.
 <pre>
 <code>
 default     = "rr-capstone-5b160b287a99a6d9"
@@ -1398,7 +1398,7 @@ That will proceed termination of all the resources deployed using terraform. Be 
 </li>
 
 </ol>
-<strong>Note, deploying the above will incur a minor cost i.e. if you kept it running the whole day it will cost around `50p` or less. But running it for a half hour will cost much less.</strong>
+<strong>Note, deploying the above will incur a minor cost i.e. if you kept it running the whole day it will cost around <b>50p</b> or less. But running it for a half hour will cost much less.</strong>
 
 </p>
 
@@ -1437,7 +1437,7 @@ That will proceed termination of all the resources deployed using terraform. Be 
 </table>
 
 
-<h3>9. 🛡️ Disclaimer</h3>
+<h1>9. 🛡️ Disclaimer</h1>
 
 <p>
 *The application logic and frontend design are inspired by the Ritual Roast project in the Udemy course mentioned above.
