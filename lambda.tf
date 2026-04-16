@@ -27,6 +27,8 @@ resource "aws_lambda_function" "secret_rotation_function" {
     aws_iam_role_policy_attachment.lambda_vpc_access
   ]
 
+  timeout = 30
+
   tags = merge(local.common_tags, {
     Name = "SecretRotationFunction"
   })
