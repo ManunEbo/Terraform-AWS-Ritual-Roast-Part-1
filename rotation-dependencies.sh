@@ -6,8 +6,14 @@
 # to run pip install at boot,
 # a Lambda function is a temporary container that exists only for a few seconds.
 
+# Create directory
+mkdir my_rotation_dependencies
+
 # Change directory into the desired directory
 cd my_rotation_dependencies/
+
+# Copy index.py into the directory
+cp ../index.py .
 
 # Install the dependency in place
 pip install pymysql --target .
