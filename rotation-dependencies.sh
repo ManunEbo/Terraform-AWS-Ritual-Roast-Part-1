@@ -2,22 +2,17 @@
 # This project packages index.py with its dependencies (PyMySQL + Cryptography)
 # for an AWS Lambda environment running Python 3.9.
 
-# 1. Start fresh - remove old artifacts
-rm -rf my_rotation_dependencies index.zip
-sleep 10
-mkdir -p my_rotation_dependencies
+# Create directory
+mkdir my_rotation_dependencies
 
-# 2. Install dependencies
-# We target 3.9 to match the Lambda runtime in Terraform.
-# We use manylinux2014 to ensure binary compatibility with AWS Lambda's OS.
-pip install \
-    --platform manylinux2014_x86_64 \
-    --target my_rotation_dependencies \
-    --implementation cp \
-    --python-version 3.9 \
-    --only-binary=:all: \
-    --upgrade \
-    pymysql cryptography
+# Change directory into the desired directory
+cd my_rotation_dependencies/
+
+# Copy index.py into the directory
+cp ../index.py .
+
+# Install the dependency in place
+pip install pymysql --target .
 
 # 3. Copy the Lambda function code into the dependency folder
 # This ensures index.py is at the root of the zip file.
