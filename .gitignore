@@ -20,6 +20,8 @@ terraform.rc
 
 # Python dependencies
 **/index/
+**my_rotation_dependencies/
+session-manager-plugin.deb
 **/pymysql/
 **/__pycache__/
 *.zip
