@@ -50,7 +50,7 @@ resource "aws_iam_policy" "rr_lambda_secrets_custom_policy" {
           "secretsmanager:DescribeSecret",
           "secretsmanager:UpdateSecret",
           "secretsmanager:PutSecretValue",
-          "secretsmanager:UpdateSecretVersionStage"
+          "secretsmanager:UpdateSecretVersionStage"   # This permits moving the AWSCURRENT label from the old password to the new one
         ]
         # Preventing the hardcoding of the account id
         Resource = "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:rr-db-secret-*"
