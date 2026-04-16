@@ -27,6 +27,9 @@ resource "aws_lambda_function" "secret_rotation_function" {
     aws_iam_role_policy_attachment.lambda_vpc_access
   ]
 
+  # the default timeout is 3 seconds.
+  # By increasing it to 30 seconds, we gave the Lambda enough "breathing room"
+  # to finish the entire handshake and the multi-step database update without being cut off mid-process.
   timeout = 30
 
   tags = merge(local.common_tags, {
