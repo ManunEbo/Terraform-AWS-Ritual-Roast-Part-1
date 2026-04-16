@@ -124,32 +124,65 @@ resource "aws_security_group_rule" "allow_3306_from_lambda" {
 #--------------------------------------------------------------
 # 4. Lambda security group - Lambda-SG
 #--------------------------------------------------------------
+# resource "aws_security_group" "Lambda-SG" {
+#   name = "Lambda-SG"
+#   description = "Allow Lambda to reach DB and internet via NAT Gateway"
+#   vpc_id = aws_vpc.RR-VPC.id
+
+#   tags = merge(local.common_tags, {
+#     Name = "Lambda-SG"
+#   })  
+# }
+
+# # Ingress: Lambda -> Database (port 3306)
+# resource "aws_security_group_rule" "lambda_egress_to_db" {
+#   type = "ingress" # Note: this will be used in Database-SG above
+#   from_port = 3306
+#   to_port = 3306
+#   protocol = "tcp"
+#   security_group_id = aws_security_group.Lambda-SG.id
+#   source_security_group_id =  aws_security_group.Database-SG.id  
+# }
+
+# # Egress: Lambda -> Public Internet / Secrets Manager API (Port 443)
+# resource "aws_security_group_rule" "lambda_egress_to_secrets_manager" {
+#   type = "egress"
+#   from_port = 443
+#   to_port = 443
+#   protocol = "tcp"
+#   cidr_blocks = ["0.0.0.0/0"] # Reaches Secrets Manager API through the NAT Gateway
+#   security_group_id = aws_security_group.Lambda-SG.id
+# }
+
+#--------------------------------------------------------------
+# 4. Lambda security group - Lambda-SG - new
+#--------------------------------------------------------------
 resource "aws_security_group" "Lambda-SG" {
-  name = "Lambda-SG"
+  name        = "Lambda-SG"
   description = "Allow Lambda to reach DB and internet via NAT Gateway"
-  vpc_id = aws_vpc.RR-VPC.id
+  vpc_id      = aws_vpc.RR-VPC.id
 
   tags = merge(local.common_tags, {
     Name = "Lambda-SG"
-  })  
+  })   
 }
 
-# Ingress: Lambda -> Database (port 3306)
+# CORRECTED: This is EGRESS because traffic is LEAVING the Lambda
 resource "aws_security_group_rule" "lambda_egress_to_db" {
-  type = "ingress" # Note: this will be used in Database-SG above
-  from_port = 3306
-  to_port = 3306
-  protocol = "tcp"
-  security_group_id = aws_security_group.Lambda-SG.id
-  source_security_group_id =  aws_security_group.Database-SG.id  
+  type                     = "egress" # Changed from ingress
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.Lambda-SG.id
+  source_security_group_id = aws_security_group.Database-SG.id   
 }
 
 # Egress: Lambda -> Public Internet / Secrets Manager API (Port 443)
 resource "aws_security_group_rule" "lambda_egress_to_secrets_manager" {
-  type = "egress"
-  from_port = 443
-  to_port = 443
-  protocol = "tcp"
-  cidr_blocks = ["0.0.0.0/0"] # Reaches Secrets Manager API through the NAT Gateway
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"] 
   security_group_id = aws_security_group.Lambda-SG.id
 }
