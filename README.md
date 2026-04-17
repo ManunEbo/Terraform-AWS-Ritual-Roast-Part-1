@@ -19,7 +19,7 @@ The diagram below is the schematics for Ritual Roast, provided in the course. Th
 <img src="images/RR-HLD Architecture.png" alt="Architecture diagram provided by the IaaS Academy Udemy Course.">
 
 <p>
-The HLD illustrates the 3-Tier Architecture with the <b>DMZ</b> presentation Tier, <b>Web/App</b> Application Tier and <b>Data</b> the Data Tier. The presentation Tier consists of a LoadBalancer that accept traffic from the internet and Loadbalances it to the Aplication Tier's Auto Scaling Group(ASG), highly available and resilient, EC2 instances in the Web/App private subnets. The instances pull source codes from an S3 to build the application.
+The HLD illustrates the 3-Tier Architecture with the <b>DMZ</b> presentation Tier, <b>Web/App</b> Application Tier and <b>Data</b> the Data Tier. The presentation Tier consists of a LoadBalancer that accept traffic from the internet and Loadbalances it to the Application Tier's Auto Scaling Group(ASG), highly available and resilient, EC2 instances in the Web/App private subnets. The instances pull source codes from an S3 to build the application.
 The application processes packets and communicates to and fro with the Data tier.
 
 Communication between resources is enabled via security groups i.e. only resources with the right security group attached can communicate vice versa. Security is further enhanced by preventing exposure to the internet for resources in private subnets. The Data tier is home to the RDS MySQL database with Multi-AZ failover. The database credentials are stored and rotated by Secrets Manager with the help of a lambda function which has a role to facilitate communication.
@@ -29,7 +29,7 @@ There is a separate role to enable communication between the EC2 instances, the 
 <h1>4. 🌐 Networking</h1>
 
 <p>
-This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" all the resources used in this project are deployed under the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>. Note, S3 buckets are global and unique. The configuration specification for this project can be found at <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/Ritual%20Roast%20Resource%20Configuration.pdf">Ritual Roast Resource Configuration</a>. A summary of this is presented under section  "6. Technical highlights". It sets out what values to use for each resource, where possible, such as the VPC CIDR range <b>10.16.0.0/16</b> hence all the subnet CIDR blocks, subnet names and availability zones for each Tier, in additions to other resource parameter settings.
+This project is deployed in <strong>"eu-west-2"</strong> region. With the exception of the S3 bucket "rr-capstone-${bucket-hex}" all the resources used in this project are deployed within the Ritual Roast VPC, <strong>"ritual-roast-vpc"</strong>. Note, S3 buckets are global and unique. The configuration specification for this project can be found at <a href="https://github.com/ManunEbo/Terraform-AWS-Ritual-Roast-Part-1/blob/main/documents/Ritual%20Roast%20Resource%20Configuration.pdf">Ritual Roast Resource Configuration</a>. A summary of this is presented under section  "6. Technical highlights". It sets out what values to use for each resource, where possible, such as the VPC CIDR range <b>10.16.0.0/16</b> hence all the subnet CIDR blocks, subnet names and availability zones for each Tier, in additions to other resource parameter settings.
 
 
 <h1>5. 🔒 Security</h1>
@@ -283,7 +283,7 @@ Of the 16 subnets required by Ritual Roast, 4 are reserved for possible future A
     <td>10.16.96.0/20</td>
     <td>10.16.160.0/20</td>
     <td>10.16.224.0/20</td>
-  </tr>>
+  </tr>
 </table>
 
 <p>
@@ -481,7 +481,7 @@ When traffic drops, the following happen:
 
 <ol>
 <li>
-The ALB receives few traffic and the CPU utilization drops significantly below the threshold
+The ALB receives low traffic and the CPU utilization drops significantly below the threshold
 </li>
 <li>
 This triggers a "Low CPU Alarm" in CloudWatch and CloudWatch notifies the ASG
@@ -532,7 +532,7 @@ Once the database is created, the secret storing database credentials is updated
 
 Without the above sequence, Terraform would do the following:
 <ol>
-<li>Create ASG and RDS instances in parralel to save time.
+<li>Create ASG and RDS instances in parallel to save time.
 </li>
 <li>AWS RDS takes 5 to 13 minutes to fully provision</li>
 <li>While the ASG will spin up EC2 instances in a few minutes</li>
@@ -1512,17 +1512,17 @@ That will proceed termination of all the resources deployed using terraform. Be 
   </tr>
   <tr>
     <td>Cloud Provider</td>
-    <td>AWS (EC2, RDS, ALB, ASG, Lambda, Secrets Manager, S3)</td>
+    <td>☁️ AWS (EC2, RDS, ALB, ASG, Lambda, Secrets Manager, S3)</td>
   </tr>
   
   <tr>
     <td>IaC</td>
-    <td>Terraform (v1.14.3)</td>
+    <td>🛠️ Terraform (v1.14.3)</td>
   </tr>
   
   <tr>
     <td>Language</td>
-    <td>Python 3.9 (Flask Framework)</td>
+    <td>🐍 Python 3.9 (Flask Framework)</td>
   </tr>
 
   <tr>
@@ -1532,9 +1532,18 @@ That will proceed termination of all the resources deployed using terraform. Be 
 
   <tr>
     <td>OS</td>
-    <td>Amazon Linux 2023</td>
+    <td>🐧Amazon Linux 2023</td>
   </tr>
   
+    <tr>
+    <td>Environment configuration</td>
+    <td>🐧 Linux/Bash</td>
+  </tr>
+
+    <tr>
+    <td>Version Control</td>
+    <td>🐙 Git</td>
+  </tr>
 </table>
 
 
