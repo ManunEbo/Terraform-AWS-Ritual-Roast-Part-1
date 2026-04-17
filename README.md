@@ -1283,15 +1283,7 @@ Set <b>region_name="eu-west-2"</b> to the region that you are using.
 To package the lambda function and it's dependency do the following:
 <ol>
 <li>
-Ensure that you are in the same directory as your index.py. Create a temporary directory that will hold the lambda function code and it's dependency.
-<pre>
-<code>
-mkdir my_rotation_dependencies
-</code>
-</pre>
-</li>
-<li>
-Once you have the directory <b>my_rotation_dependencies</b> created, execute  <b>rotation-dependencies.sh</b>
+Ensure that you are in the same directory as your index.py. Execute rotation-dependencies.sh
 <pre>
 <code>
 ./rotation-dependencies.sh
@@ -1332,7 +1324,7 @@ default     = "rr-capstone-5b160b287a99a6d9"
 
 </li>
 <li>
-<b>Export db credentials</b>: in the terminal export the database username and password
+<b>Export db credentials</b>: in the terminal export the database username and password. Note you can set these values to whatever you want.
 <pre>
 <code>
 export TF_VAR_db_username="admin"
@@ -1346,7 +1338,6 @@ export TF_VAR_db_password="YourSecurePassword123!"
 </pre>
 </li>
 
-
 <li>
 <b>Initialize terraform</b>: In the terminal run the following
 <pre>
@@ -1354,6 +1345,7 @@ export TF_VAR_db_password="YourSecurePassword123!"
 terraform init
 </code>
 </pre>
+Note, you must have terraform already installed.
 </li>
 
 <li>
@@ -1366,7 +1358,7 @@ terraform plan
 </pre>
 </li>
 <li>
-<b>Invalid value for AMI Error</b>: AWS changes the AMI frequently, if you get this error then replace the value in <b>on terraform.tfvars line 86:</b> with the value specified in the data source.
+<b>Invalid value for AMI Error</b>: AWS changes the AMI frequently, if you get this error then replace the value in <b>on terraform.tfvars line 86:</b> with the value specified in the data source, from the error message.
 <pre>
 <code>
 data.aws_ami.amazon_linux_2023.id is "ami-0685f8dd865c8e389"
@@ -1381,7 +1373,7 @@ terraform plan
 will work fine.
 </li>
 <li>
-<b>Apply the changes</b>: If you are happy with the changes run the following in your terminal:
+<b>Apply the changes</b>: If you are happy with the changes to be made, run the following in your terminal:
 <pre>
 <code>
 terraform apply -auto-approve
@@ -1400,7 +1392,104 @@ echo "http://$(aws elbv2 describe-load-balancers --query 'LoadBalancers[?Scheme=
 Copy the url and paste it into your browser and it should bring up your Ritual Roast Website.
 </li>
 <li>
-<b>Terminate the project</b>: When you're done to destroy the project run the following in your terminal:
+<b>Test the database<b>: On the website, insert a recipe and submit it to the database. Scroll to the bottom to verify that the data transfer(transaction) and retrieval was a success. You should see the recipe displayed.
+</li>
+<li>
+<b>Testing rotation</b>: Now that the database is responding, lets verify that the lambda secret rotation is also working as expected. Note, you need to have AWS CLI installed for this.
+<ol>
+<li>
+<b>Verify initial rotation</b>: By default, an initial rotation is triggered by Secrets Manager. This will rotate the password. To verify that this happened, run the following in the terminal:
+<pre>
+<code>
+aws secretsmanager describe-secret --secret-id rr-db-secret-14 --query 'LastRotatedDate'
+</code>
+</pre>
+The output should be a date. If it is null then the rotation has failed.
+</li>
+
+<li>
+<b>Current credentials</b>: You can retrieve the current (new) credentials with the following:
+<pre>
+<code>
+aws secretsmanager get-secret-value --secret-id rr-db-secret-14 --version-stage AWSCURRENT --query SecretString --output text
+</code>
+</pre>
+You should notice that the password has changed and the "host" value should look similar to "<b>rr-db.cz0ye2ecop76.eu-west-2.rds.amazonaws.com</b>"
+</li>
+
+<li>
+<b>Previous password</b>: You can verify the previous password with:
+<pre>
+<code>
+aws secretsmanager get-secret-value --secret-id rr-db-secret-14 --version-stage AWSPREVIOUS --query SecretString --output text
+</code>
+</pre>
+This will output the previous credentials including the previous password. Note, this should be the password you setup in the terminal
+</li>
+
+<li>
+<b>View version ids of AWSCURRENT and AWSPENDING</b>: We can view the location of these secret values with
+<pre>
+<code>
+aws secretsmanager list-secret-version-ids --secret-id rr-db-secret-14 --query "Versions[?VersionStages[?@=='AWSCURRENT'] || VersionStages[?@=='AWSPREVIOUS']]"
+</code>
+</pre>
+They should be on the same VersionId and it would look like:
+<pre>
+<code>
+"VersionId": "e5706457-d3bb-4931-87e1-060752d1f664",
+"VersionStages": [
+    "AWSCURRENT",
+    "AWSPENDING"
+]
+</code>
+</pre>
+This would mean that the previous rotation was a success and that both the <b>AWSCURRENT</b> and <b>AWSPENDING</b> are pointing to the same secret value. This is what we want to see.
+</li>
+
+<li>
+<b>Clear AWSPENDING flag</b>: Before rotating the secret, lets first empty the <b>AWSPENDING</b> flag so that the new secret value from rotation will ocupy this flag.
+
+<pre>
+<code>
+aws secretsmanager update-secret-version-stage --secret-id rr-db-secret-14 --version-stage AWSPENDING --remove-from-version-id
+</code>
+</pre>
+Now the <b>AWSPENDING</b> should not be pointing at any secret.
+</li>
+
+<li>
+<b>Force rotation</b>: Although the defaul rotation above is sufficient to test that the rotation logic is working, we can force the secret rotation, manually, with the following:
+<pre>
+<code>
+aws secretsmanager rotate-secret --secret-id rr-db-secret-14
+</code>
+</pre>
+</li>
+
+<li>
+<b>Verify the manual rotation</b>: Lets now verify that the rotation was a success with the following
+<pre>
+<code>
+aws secretsmanager get-secret-value --secret-id rr-db-secret-14 --version-stage AWSCURRENT --query SecretString --output text
+</code>
+</pre>
+You should see that the password had changed again.
+</li>
+
+<li>
+<b>View version ids of AWSCURRENT and AWSPENDING</b>: Once again we can check that both <b>AWSCURRENT</b> and <b>AWSPENDING</b> are pointing to the same <b>VersionId</b> with the following:
+<pre>
+<code>
+aws secretsmanager list-secret-version-ids --secret-id rr-db-secret-14 --query "Versions[?VersionStages[?@=='AWSCURRENT'] || VersionStages[?@=='AWSPREVIOUS']]"
+</code>
+</pre>
+They should. Now our rotation check is complete.
+</li>
+</ol>
+</li>
+<li>
+<b>Terminate the project</b>: Feel free to check other important compenents e.g. <b>aws_autoscaling_group</b> for instance health checks etc. When you're done to destroy the project run the following in your terminal:
 <pre>
 <code>
 terraform destroy -auto-approve
