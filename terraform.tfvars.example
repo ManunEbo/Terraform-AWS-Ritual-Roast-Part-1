@@ -1,112 +1,114 @@
 # Listing public subnets and their respective info
 public_subnet_list = [
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "PublicSubnet-01-2a"
+    cidr        = "10.16.0.0/20"
+    az          = "eu-west-2a"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "PublicSubnet-02-2b"
+    cidr        = "10.16.16.0/20"
+    az          = "eu-west-2b"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "PublicSubnet-03-2c"
+    cidr        = "10.16.32.0/20"
+    az          = "eu-west-2c"
   }
 ]
 
 # Listing the web subnets and their respective info
 web_subnet_list = [
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "WebSubnet-01-2a"
+    cidr        = "10.16.64.0/20"
+    az          = "eu-west-2a"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "WebSubnet-02-2b"
+    cidr        = "10.16.80.0/20"
+    az          = "eu-west-2b"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "WebSubnet-03-2c"
+    cidr        = "10.16.96.0/20"
+    az          = "eu-west-2c"
   }
 ]
 
 # Listing the App subnets and their respective info
 app_subnet_list = [
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "AppSubnet-01-2a"
+    cidr        = "10.16.128.0/20"
+    az          = "eu-west-2a"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "AppSubnet-02-2b"
+    cidr        = "10.16.144.0/20"
+    az          = "eu-west-2b"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "AppSubnet-03-2c"
+    cidr        = "10.16.160.0/20"
+    az          = "eu-west-2c"
   }
 ]
 
 # Listing the Database subnets and their respective info
 database_subnet_list = [
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "DataSubnet-01-2a"
+    cidr        = "10.16.192.0/20"
+    az          = "eu-west-2a"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "DataSubnet-02-2b"
+    cidr        = "10.16.208.0/20"
+    az          = "eu-west-2b"
   },
   {
-    subnet_name = "Replace_me"
-    cidr        = "Replace_me"
-    az          = "Replace_me"
+    subnet_name = "DataSubnet-03-2c"
+    cidr        = "10.16.224.0/20"
+    az          = "eu-west-2c"
   }
 ]
 
 # setting value for environment
-environment = "Replace_me"
+environment = "dev"
 
 #------------------------------------------------------------------------
 # ---------------------- EC2 Validation variables -----------------------
 #------------------------------------------------------------------------
 
-instance_type = "Replace_me"
+instance_type = "t3.micro"
 
-ami = "Replace_me"
+ami = "ami-0685f8dd865c8e389"
 
-volume_size = Replace_me
+volume_size = 30
 
-volume_type = "Replace_me"
+volume_type = "gp3"
 
-delete_on_termination = Replace_me
+delete_on_termination = true
 
-iam_instance_profile = "Replace_me"
+iam_instance_profile = "rr_ec2_s3_secret_role"
 
-associate_public_ip_address = Replace_me
+associate_public_ip_address = false
 
 
 #------------------------------------------------------------------------
 # -------------------- MyySQL Validation variables ----------------------
 #------------------------------------------------------------------------
 
-mysql_engine = "Replace_me"
+mysql_engine = "mysql"
 
-db_instance_class = "Replace_me"
+db_instance_class = "db.t3.micro"
 
-db_allocated_storage = Replace_me
+db_allocated_storage = 30
+
+
 
 #------------------------------------------------------------------------
 
 # S3 bucket
-s3_bucket = "Replace_me"
+s3_bucket = "rr-capstone-5b160b287a99a6d9"

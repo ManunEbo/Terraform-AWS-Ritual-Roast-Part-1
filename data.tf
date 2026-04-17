@@ -10,11 +10,6 @@ resource "time_sleep" "wait" {
   create_duration = "5m" # Adjust the duration as needed.
 }
 
-# Retrieving the database credentials from secrets manager
-# data "aws_secretsmanager_secret_version" "rr_db_credentials" {
-#   depends_on = [aws_secretsmanager_secret_rotation.db_secret_rotation]
-#   secret_id  = aws_secretsmanager_secret.db_secret.id
-# }
 
 #------------------------------------------------------------
 #-------------------- Retrieve AMIs -------------------------

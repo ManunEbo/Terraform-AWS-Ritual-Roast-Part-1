@@ -1,4 +1,4 @@
-# 5. Load Balancer Setup
+# Load Balancer Setup
 resource "aws_lb" "rr_alb" {
   name               = "rr-alb"
   internal           = false

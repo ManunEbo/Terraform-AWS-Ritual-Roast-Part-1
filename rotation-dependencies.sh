@@ -28,4 +28,6 @@ cd ..
 echo "Build complete. index.zip is ready for Terraform."
 
 # 5. Optional Cleanup (Commented out)
+# Allow enough time for the packaging to complete before deleting my_rotation_dependencies
+# sleep 180
 # rm -rf my_rotation_dependencies/
