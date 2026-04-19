@@ -1279,6 +1279,12 @@ client = session.client(service_name="secretsmanager", region_name="eu-west-2")
 Set <b>region_name="eu-west-2"</b> to the region that you are using.
 </li>
 <li>
+<b>Rename terraform.tfvars.example</b>: Rename this file to <b>terraform.tfvars</b>
+</li>
+<li>
+<b>Change s3 bucket name in terraform.tfvars</b>: Open the file and scroll to the bottom, line 114, and change the s3 bucket name to your bucket name.
+</li>
+<li>
 <b>Lambda code and dependency</b>: 
 To package the lambda function and it's dependency do the following:
 <ol>
