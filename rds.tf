@@ -12,6 +12,12 @@ resource "aws_db_instance" "ritual_roast_db" {
   db_name    = "ritual_roast" # Corrected for AWS Provider 4.x/5.x/6.x
 
   engine            = var.mysql_engine
+  engine_version = "8.4"
+  
+  # Fail creation instead of silently enrolling in paid RDS Extended Support
+  # once this major version passes end of standard support.
+  engine_lifecycle_support = "open-source-rds-extended-support-disabled"
+
   instance_class    = var.db_instance_class
   allocated_storage = var.db_allocated_storage
   storage_type      = "gp3"
